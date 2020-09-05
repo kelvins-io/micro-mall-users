@@ -1,0 +1,345 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "proto/micro_mall_users_proto/users/users.proto",
+    "version": "version not set"
+  },
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/v1/user/info": {
+      "get": {
+        "summary": "获取用户信息",
+        "operationId": "GetUserInfo",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/usersGetUserInfoResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "uid",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "UsersService"
+        ]
+      }
+    },
+    "/v1/user/merchants/associate/shop": {
+      "put": {
+        "summary": "商户关联店铺",
+        "operationId": "MerchantsAssociateShop",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/usersMerchantsAssociateShopResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/usersMerchantsAssociateShopRequest"
+            }
+          }
+        ],
+        "tags": [
+          "MerchantsService"
+        ]
+      }
+    },
+    "/v1/user/merchants/audit": {
+      "put": {
+        "summary": "审核商户,返回审核结果",
+        "operationId": "MerchantsMaterialAudit",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/usersMerchantsMaterialAuditResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/usersMerchantsMaterialAuditRequest"
+            }
+          }
+        ],
+        "tags": [
+          "MerchantsService"
+        ]
+      }
+    },
+    "/v1/user/merchants/material": {
+      "get": {
+        "summary": "获取商户资料",
+        "operationId": "GetMerchantsMaterial",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/usersGetMerchantsMaterialResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "material_id",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "MerchantsService"
+        ]
+      },
+      "post": {
+        "summary": "获取用户信息",
+        "operationId": "MerchantsMaterial",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/usersMerchantsMaterialResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/usersMerchantsMaterialRequest"
+            }
+          }
+        ],
+        "tags": [
+          "MerchantsService"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "usersCommonResponse": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "$ref": "#/definitions/usersRetCode"
+        },
+        "msg": {
+          "type": "string"
+        }
+      }
+    },
+    "usersGetMerchantsMaterialResponse": {
+      "type": "object",
+      "properties": {
+        "common": {
+          "$ref": "#/definitions/usersCommonResponse"
+        },
+        "info": {
+          "$ref": "#/definitions/usersMerchantsMaterialInfo"
+        }
+      }
+    },
+    "usersGetUserInfoResponse": {
+      "type": "object",
+      "properties": {
+        "common": {
+          "$ref": "#/definitions/usersCommonResponse"
+        },
+        "info": {
+          "$ref": "#/definitions/usersUserInfo"
+        }
+      }
+    },
+    "usersMerchantsAssociateShopRequest": {
+      "type": "object",
+      "properties": {
+        "material_id": {
+          "type": "string",
+          "format": "int64"
+        },
+        "shop_id": {
+          "type": "string",
+          "format": "int64"
+        },
+        "is_associate": {
+          "type": "boolean",
+          "format": "boolean"
+        }
+      }
+    },
+    "usersMerchantsAssociateShopResponse": {
+      "type": "object",
+      "properties": {
+        "common": {
+          "$ref": "#/definitions/usersCommonResponse"
+        }
+      }
+    },
+    "usersMerchantsMaterialAuditRequest": {
+      "type": "object",
+      "properties": {
+        "material_id": {
+          "type": "string",
+          "format": "int64"
+        },
+        "audit_uid": {
+          "type": "string",
+          "format": "int64"
+        },
+        "comment": {
+          "type": "string"
+        }
+      }
+    },
+    "usersMerchantsMaterialAuditResponse": {
+      "type": "object",
+      "properties": {
+        "common": {
+          "$ref": "#/definitions/usersCommonResponse"
+        },
+        "state": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "comment": {
+          "type": "string"
+        },
+        "next_audit_uid": {
+          "type": "string",
+          "format": "int64"
+        },
+        "is_over": {
+          "type": "boolean",
+          "format": "boolean"
+        }
+      }
+    },
+    "usersMerchantsMaterialInfo": {
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "format": "int64"
+        },
+        "material_id": {
+          "type": "string",
+          "format": "int64"
+        },
+        "register_addr": {
+          "type": "string"
+        },
+        "health_card_no": {
+          "type": "string"
+        },
+        "identity": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "state": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "tax_card_no": {
+          "type": "string"
+        }
+      }
+    },
+    "usersMerchantsMaterialRequest": {
+      "type": "object",
+      "properties": {
+        "info": {
+          "$ref": "#/definitions/usersMerchantsMaterialInfo"
+        }
+      }
+    },
+    "usersMerchantsMaterialResponse": {
+      "type": "object",
+      "properties": {
+        "common": {
+          "$ref": "#/definitions/usersCommonResponse"
+        }
+      }
+    },
+    "usersRetCode": {
+      "type": "string",
+      "enum": [
+        "SUCCESS",
+        "ERROR",
+        "USER_NOT_EXIST"
+      ],
+      "default": "SUCCESS"
+    },
+    "usersUserInfo": {
+      "type": "object",
+      "properties": {
+        "account_id": {
+          "type": "string"
+        },
+        "user_name": {
+          "type": "string"
+        },
+        "sex": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "country_code": {
+          "type": "string"
+        },
+        "phone": {
+          "type": "string"
+        },
+        "email": {
+          "type": "string"
+        },
+        "state": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "id_card_no": {
+          "type": "string"
+        },
+        "inviter": {
+          "type": "string",
+          "format": "int64"
+        },
+        "inviter_code": {
+          "type": "string"
+        },
+        "contact_addr": {
+          "type": "string"
+        },
+        "age": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    }
+  }
+}
