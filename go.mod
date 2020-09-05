@@ -1,8 +1,9 @@
-module gitee.com/kelvins-io/kelvins-template
+module gitee.com/cristiane/micro-mall-users
 
 go 1.13
 
 require (
+	gitee.com/cristiane/go-common v1.0.1
 	gitee.com/kelvins-io/common v1.0.2
 	gitee.com/kelvins-io/kelvins v1.1.1
 	github.com/RichardKnop/machinery v1.9.1 // indirect

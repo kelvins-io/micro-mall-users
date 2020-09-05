@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package common;
+
+message Request {
+
+}
+
+message Response {
+    
+}
+
+message Pager {
+    // 页码
+    int64 page = 1;
+    // 页数
+    int64 page_size = 2;
+    // 总行数
+    int64 total_rows = 3;
+}

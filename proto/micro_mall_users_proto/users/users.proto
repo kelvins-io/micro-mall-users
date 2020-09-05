@@ -55,6 +55,7 @@ message GetUserInfoRequest {
 }
 
 message UserInfo {
+    int64 uid = 1;
     string account_id = 2;
     string user_name = 3;
     int32 sex = 4;
@@ -67,6 +68,7 @@ message UserInfo {
     string inviter_code = 11;
     string contact_addr = 12;
     int32 age = 13;
+    string create_time = 14;
 }
 
 message GetUserInfoResponse {

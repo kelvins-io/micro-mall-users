@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package common;
+
+import "google/protobuf/any.proto";
+
+message Error {
+    int32 code = 1;
+    string message = 2;
+    google.protobuf.Any detail = 3;
+}
+
+

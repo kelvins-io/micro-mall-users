@@ -44,6 +44,7 @@ cloud.google.com/go/storage v1.10.0/go.mod h1:FLPqc6j+Ki4BU591ie1oL6qBQGu2Bl/tZ9
 dmitri.shuralyov.com/gpu/mtl v0.0.0-20190408044501-666a987793e9/go.mod h1:H6x//7gZCb22OMCxBHrMx7a5I7Hp++hsVxbQ4BYO7hU=
 gitea.com/xorm/sqlfiddle v0.0.0-20180821085327-62ce714f951a/go.mod h1:EXuID2Zs0pAQhH8yz+DNjUbjppKQzKFAn28TMYPB6IU=
 gitee.com/cristiane/go-common v0.0.0-20200103100912-9b4de946a640/go.mod h1:EX6uv/8C8ThHXrkpStwKupS4Ex8QX53EwuAf3/BzPoY=
+gitee.com/cristiane/go-common v1.0.1/go.mod h1:EX6uv/8C8ThHXrkpStwKupS4Ex8QX53EwuAf3/BzPoY=
 gitee.com/cristiane/micro-mall-users v0.0.0-20200614131643-90408a69a6e1 h1:hyBh2thhZWnDvzdeAzSHzwG11+wn4e7ZbR97qH/Q+4s=
 gitee.com/cristiane/track-service-config v0.0.0-20200103101155-0a1b993478df/go.mod h1:wDzDNbrFIWd+YhfWO+MoZyxjYRmfQ/JXUHTZ0ac6FqU=
 gitee.com/kelvins-io/common v1.0.1 h1:/km2YCjd9ZtoF+/3KsJl5OSPw7z6fKPVnzH2zGE6KFw=

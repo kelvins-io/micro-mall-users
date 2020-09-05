@@ -299,6 +299,10 @@
     "usersUserInfo": {
       "type": "object",
       "properties": {
+        "uid": {
+          "type": "string",
+          "format": "int64"
+        },
         "account_id": {
           "type": "string"
         },
@@ -338,6 +342,9 @@
         "age": {
           "type": "integer",
           "format": "int32"
+        },
+        "create_time": {
+          "type": "string"
         }
       }
     }
