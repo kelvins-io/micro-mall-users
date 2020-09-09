@@ -54,6 +54,7 @@ func (u *UsersServer) GetUserInfo(ctx context.Context, req *users.GetUserInfoReq
 			ContactAddr: userInfo.ContactAddr,
 			Age:         int32(userInfo.Age),
 			CreateTime:  util.ParseTimeOfStr(userInfo.CreateTime.Unix()),
+			UpdateTime:  util.ParseTimeOfStr(userInfo.UpdateTime.Unix()),
 		},
 	}, nil
 }

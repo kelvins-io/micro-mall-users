@@ -36,6 +36,21 @@ func GetUserByPhone(countryCode, phone string) (*mysql.UserInfo, error) {
 	return &user, err
 }
 
+func CheckUserExistById(id int) (exist bool, err error) {
+	var user mysql.UserInfo
+	exist, err = kelvins.XORM_DBEngine.Table(mysql.TableUser).
+		Select("id").
+		Where("id = ?", id).Get(&user)
+	if err != nil {
+		return false, err
+	}
+	if user.Id != 0 {
+		return true, nil
+	}
+
+	return false, nil
+}
+
 func CheckUserExistByPhone(countryCode, phone string) (exist bool, err error) {
 	var user mysql.UserInfo
 	exist, err = kelvins.XORM_DBEngine.Table(mysql.TableUser).

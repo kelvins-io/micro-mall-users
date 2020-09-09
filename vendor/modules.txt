@@ -24,7 +24,7 @@ gitee.com/kelvins-io/common/proto/common
 gitee.com/kelvins-io/common/proto/google/api
 gitee.com/kelvins-io/common/ptool
 gitee.com/kelvins-io/common/queue
-# gitee.com/kelvins-io/kelvins v1.1.1
+# gitee.com/kelvins-io/kelvins v1.1.2
 gitee.com/kelvins-io/kelvins
 gitee.com/kelvins-io/kelvins/app
 gitee.com/kelvins-io/kelvins/config

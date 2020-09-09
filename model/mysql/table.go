@@ -46,6 +46,7 @@ type UserInfo struct {
 
 type MerchantInfo struct {
 	MerchantId   int       `xorm:"'merchant_id' not null pk autoincr comment('商户号ID') INT"`
+	MerchantCode string    `xorm:"'merchant_code' not null comment('商户唯一code') index CHAR(36)"`
 	Uid          int       `xorm:"'uid' not null comment('用户ID') unique INT"`
 	RegisterAddr string    `xorm:"'register_addr' not null comment('注册地址') TEXT"`
 	HealthCardNo string    `xorm:"'health_card_no' not null comment('健康证号') index CHAR(30)"`
