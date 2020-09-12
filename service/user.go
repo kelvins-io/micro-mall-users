@@ -8,11 +8,11 @@ import (
 	"gitee.com/kelvins-io/kelvins"
 )
 
-func GetUserInfo(ctx context.Context, uid int)  (*mysql.UserInfo,int){
-	user,err :=  repository.GetUserByUid(uid)
+func GetUserInfo(ctx context.Context, uid int) (*mysql.User, int) {
+	user, err := repository.GetUserByUid(uid)
 	if err != nil {
-		kelvins.ErrLogger.Errorf(ctx,"GetUserByUid err: %v, uid: %v",err,uid)
-		return user,code.ErrorServer
+		kelvins.ErrLogger.Errorf(ctx, "GetUserByUid err: %v, uid: %v", err, uid)
+		return user, code.ErrorServer
 	}
-	return user,code.Success
+	return user, code.Success
 }

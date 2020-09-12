@@ -24,7 +24,7 @@ func MerchantsMaterial(ctx context.Context, req *users.MerchantsMaterialRequest)
 		return merchantId, code.UserNotExist
 	}
 	if req.OperationType == users.OperationType_CREATE {
-		merchantMaterial := mysql.MerchantInfo{
+		merchantMaterial := mysql.Merchant{
 			Uid:          int(req.Info.Uid),
 			MerchantCode: uuid.New().String(),
 			RegisterAddr: req.Info.RegisterAddr,
@@ -72,7 +72,7 @@ func MerchantsMaterial(ctx context.Context, req *users.MerchantsMaterialRequest)
 	return merchantId, code.Success
 }
 
-func GetMerchantsMaterial(ctx context.Context, req *users.GetMerchantsMaterialRequest) (*mysql.MerchantInfo, int) {
+func GetMerchantsMaterial(ctx context.Context, req *users.GetMerchantsMaterialRequest) (*mysql.Merchant, int) {
 	merchantInfo, err := repository.GetMerchantsMaterialByUid(int(req.MaterialId))
 	if err != nil {
 		kelvins.ErrLogger.Errorf(ctx, "GetMerchantsMaterialByUid err: %v,MaterialId : %+v", err, req.ProtoMessage)

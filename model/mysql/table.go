@@ -6,9 +6,8 @@ import (
 )
 
 const (
-	TableConfigKvStore    = "qqq"
-	TableUser             = "user_info"
-	TableMerchantInfo     = "merchant_info"
+	TableUser             = "user"
+	TableMerchantInfo     = "merchant"
 	TableVerifyCodeRecord = "verify_code_record"
 )
 
@@ -24,7 +23,7 @@ type VerifyCodeRecord struct {
 	CreateTime   time.Time `xorm:"'create_time' comment('创建时间') DATETIME"`
 	UpdateTime   time.Time `xorm:"'update_time' comment('修改时间') DATETIME"`
 }
-type UserInfo struct {
+type User struct {
 	Id           int            `xorm:"'id' not null pk autoincr comment('用户id') INT"`
 	AccountId    string         `xorm:"'account_id' not null comment('账户ID，全局唯一') unique CHAR(36)"`
 	UserName     string         `xorm:"'user_name' not null comment('用户名') index VARCHAR(255)"`
@@ -44,7 +43,7 @@ type UserInfo struct {
 	UpdateTime   time.Time      `xorm:"'update_time' not null comment('修改时间') DATETIME"`
 }
 
-type MerchantInfo struct {
+type Merchant struct {
 	MerchantId   int       `xorm:"'merchant_id' not null pk autoincr comment('商户号ID') INT"`
 	MerchantCode string    `xorm:"'merchant_code' not null comment('商户唯一code') index CHAR(36)"`
 	Uid          int       `xorm:"'uid' not null comment('用户ID') unique INT"`
