@@ -24,6 +24,13 @@ func GetUserByUid(uid int) (*mysql.User, error) {
 	return &user, err
 }
 
+func GetUserAccountIdByUid(uid int64) (*mysql.User, error) {
+	var user mysql.User
+	var err error
+	_, err = kelvins.XORM_DBEngine.Table(mysql.TableUser).Select("account_id").Where("id = ?", uid).Get(&user)
+	return &user, err
+}
+
 func UpdateUserInfo(query, maps map[string]interface{}) (err error) {
 	_, err = kelvins.XORM_DBEngine.Table(mysql.TableUser).Where(query).Update(maps)
 	return

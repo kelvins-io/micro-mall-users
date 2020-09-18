@@ -10,6 +10,8 @@ const (
 	DBDuplicateEntry = 29000007
 	MerchantExist    = 29000008
 	MerchantNotExist = 29000009
+	AccountExist     = 29000010
+	AccountNotExist  = 29000011
 )
 
 var ErrMap = make(map[int]string)
@@ -23,6 +25,8 @@ func init() {
 		UserExist:        "已存在用户记录，请勿重复创建",
 		MerchantExist:    "商户认证材料已存在",
 		MerchantNotExist: "商户未提交材料",
+		AccountExist:     "账户已存在",
+		AccountNotExist:  "账户不存在",
 	}
 	errcode.RegisterErrMsgDict(dict)
 	for key, _ := range dict {

@@ -16,6 +16,7 @@ require (
 	github.com/jinzhu/gorm v1.9.15 // indirect
 	github.com/robfig/cron v1.2.0 // indirect
 	github.com/satori/go.uuid v1.2.0
+	github.com/sony/sonyflake v1.0.0
 	github.com/tidwall/gjson v1.6.0 // indirect
 	go.elastic.co/apm/module/apmredigo v1.7.0 // indirect
 	golang.org/x/net v0.0.0-20200707034311-ab3426394381

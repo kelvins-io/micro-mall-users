@@ -11,6 +11,33 @@
     "application/json"
   ],
   "paths": {
+    "/v1/user/account/create": {
+      "post": {
+        "summary": "创建用户账户",
+        "operationId": "CreateUserAccount",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/usersCreateUserAccountResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/usersCreateUserAccountRequest"
+            }
+          }
+        ],
+        "tags": [
+          "UsersService"
+        ]
+      }
+    },
     "/v1/user/info": {
       "get": {
         "summary": "获取用户信息",
@@ -30,6 +57,37 @@
             "required": false,
             "type": "string",
             "format": "int64"
+          }
+        ],
+        "tags": [
+          "UsersService"
+        ]
+      }
+    },
+    "/v1/user/info/by_phone": {
+      "get": {
+        "summary": "获取用户信息-手机号",
+        "operationId": "GetUserInfoByPhone",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/usersGetUserInfoByPhoneResponse"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "country_code",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "phone",
+            "in": "query",
+            "required": false,
+            "type": "string"
           }
         ],
         "tags": [
@@ -66,7 +124,7 @@
     },
     "/v1/user/merchants/audit": {
       "put": {
-        "summary": "审核商户,返回审核结果",
+        "summary": "获取用户信息-手机号",
         "operationId": "MerchantsMaterialAudit",
         "responses": {
           "200": {
@@ -93,7 +151,7 @@
     },
     "/v1/user/merchants/material": {
       "get": {
-        "summary": "获取商户资料",
+        "summary": "创建用户账户",
         "operationId": "GetMerchantsMaterial",
         "responses": {
           "200": {
@@ -144,6 +202,32 @@
     }
   },
   "definitions": {
+    "usersAccountState": {
+      "type": "string",
+      "enum": [
+        "NORMAL",
+        "LOCK",
+        "INVALID"
+      ],
+      "default": "NORMAL"
+    },
+    "usersAccountType": {
+      "type": "string",
+      "enum": [
+        "PERSONAL",
+        "COMPANY",
+        "SYSTEM"
+      ],
+      "default": "PERSONAL"
+    },
+    "usersCoinType": {
+      "type": "string",
+      "enum": [
+        "CNY",
+        "USD"
+      ],
+      "default": "CNY"
+    },
     "usersCommonResponse": {
       "type": "object",
       "properties": {
@@ -151,6 +235,41 @@
           "$ref": "#/definitions/usersRetCode"
         },
         "msg": {
+          "type": "string"
+        }
+      }
+    },
+    "usersCreateUserAccountRequest": {
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "format": "int64"
+        },
+        "balance": {
+          "type": "string"
+        },
+        "coin_type": {
+          "$ref": "#/definitions/usersCoinType"
+        },
+        "coin_desc": {
+          "type": "string"
+        },
+        "account_state": {
+          "$ref": "#/definitions/usersAccountState"
+        },
+        "account_type": {
+          "$ref": "#/definitions/usersAccountType"
+        }
+      }
+    },
+    "usersCreateUserAccountResponse": {
+      "type": "object",
+      "properties": {
+        "common": {
+          "$ref": "#/definitions/usersCommonResponse"
+        },
+        "account_code": {
           "type": "string"
         }
       }
@@ -163,6 +282,17 @@
         },
         "info": {
           "$ref": "#/definitions/usersMerchantsMaterialInfo"
+        }
+      }
+    },
+    "usersGetUserInfoByPhoneResponse": {
+      "type": "object",
+      "properties": {
+        "common": {
+          "$ref": "#/definitions/usersCommonResponse"
+        },
+        "info": {
+          "$ref": "#/definitions/usersUserInfo"
         }
       }
     },
@@ -318,7 +448,9 @@
         "USER_NOT_EXIST",
         "USER_EXIST",
         "MERCHANT_NOT_EXIST",
-        "MERCHANT_EXIST"
+        "MERCHANT_EXIST",
+        "ACCOUNT_EXIST",
+        "ACCOUNT_NOT_EXIST"
       ],
       "default": "SUCCESS"
     },
