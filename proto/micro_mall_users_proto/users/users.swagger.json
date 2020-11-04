@@ -11,68 +11,21 @@
     "application/json"
   ],
   "paths": {
-    "/v1/user/account/create": {
-      "post": {
-        "summary": "创建用户账户",
-        "operationId": "CreateUserAccount",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/usersCreateUserAccountResponse"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/usersCreateUserAccountRequest"
-            }
-          }
-        ],
-        "tags": [
-          "UsersService"
-        ]
-      }
-    },
-    "/v1/user/info": {
+    "/v1/user/exist/phone": {
       "get": {
-        "summary": "获取用户信息",
-        "operationId": "GetUserInfo",
+        "summary": "检查用户是否注册-手机号",
+        "operationId": "UsersService_CheckUserByPhone",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/usersGetUserInfoResponse"
+              "$ref": "#/definitions/usersCheckUserByPhoneResponse"
             }
-          }
-        },
-        "parameters": [
-          {
-            "name": "uid",
-            "in": "query",
-            "required": false,
-            "type": "string",
-            "format": "int64"
-          }
-        ],
-        "tags": [
-          "UsersService"
-        ]
-      }
-    },
-    "/v1/user/info/by_phone": {
-      "get": {
-        "summary": "获取用户信息-手机号",
-        "operationId": "GetUserInfoByPhone",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
+          },
+          "default": {
+            "description": "An unexpected error response",
             "schema": {
-              "$ref": "#/definitions/usersGetUserInfoByPhoneResponse"
+              "$ref": "#/definitions/runtimeError"
             }
           }
         },
@@ -95,15 +48,197 @@
         ]
       }
     },
+    "/v1/user/identity": {
+      "get": {
+        "summary": "检查用户身份",
+        "operationId": "UsersService_CheckUserIdentity",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/usersCheckUserIdentityResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "country_code",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "phone",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "pwd",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "UsersService"
+        ]
+      }
+    },
+    "/v1/user/info": {
+      "get": {
+        "summary": "获取用户信息",
+        "operationId": "UsersService_GetUserInfo",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/usersGetUserInfoResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "uid",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "UsersService"
+        ]
+      }
+    },
+    "/v1/user/info/invite_code": {
+      "get": {
+        "summary": "根据邀请码获取邀请人",
+        "operationId": "UsersService_GetUserInfoByInviteCode",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/usersGetUserByInviteCodeResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "invite_code",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "UsersService"
+        ]
+      }
+    },
+    "/v1/user/info/phone": {
+      "get": {
+        "summary": "获取用户信息-手机号",
+        "operationId": "UsersService_GetUserInfoByPhone",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/usersGetUserInfoByPhoneResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "country_code",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "phone",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "UsersService"
+        ]
+      }
+    },
+    "/v1/user/login": {
+      "put": {
+        "summary": "登录",
+        "operationId": "UsersService_LoginUser",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/usersLoginUserResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/usersLoginUserRequest"
+            }
+          }
+        ],
+        "tags": [
+          "UsersService"
+        ]
+      }
+    },
     "/v1/user/merchants/associate/shop_business": {
       "put": {
         "summary": "商户关联店铺",
-        "operationId": "MerchantsAssociateShop",
+        "operationId": "MerchantsService_MerchantsAssociateShop",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/usersMerchantsAssociateShopResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
             }
           }
         },
@@ -124,13 +259,19 @@
     },
     "/v1/user/merchants/audit": {
       "put": {
-        "summary": "获取用户信息-手机号",
-        "operationId": "MerchantsMaterialAudit",
+        "summary": "审核商户,返回审核结果",
+        "operationId": "MerchantsService_MerchantsMaterialAudit",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/usersMerchantsMaterialAuditResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
             }
           }
         },
@@ -151,13 +292,19 @@
     },
     "/v1/user/merchants/material": {
       "get": {
-        "summary": "创建用户账户",
-        "operationId": "GetMerchantsMaterial",
+        "summary": "获取商户资料",
+        "operationId": "MerchantsService_GetMerchantsMaterial",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/usersGetMerchantsMaterialResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
             }
           }
         },
@@ -175,13 +322,19 @@
         ]
       },
       "post": {
-        "summary": "获取用户信息",
-        "operationId": "MerchantsMaterial",
+        "summary": "商户提交资料",
+        "operationId": "MerchantsService_MerchantsMaterial",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
               "$ref": "#/definitions/usersMerchantsMaterialResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
             }
           }
         },
@@ -199,34 +352,160 @@
           "MerchantsService"
         ]
       }
+    },
+    "/v1/user/password/reset": {
+      "put": {
+        "summary": "重置登录密码",
+        "operationId": "UsersService_PasswordReset",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/usersPasswordResetResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/usersPasswordResetRequest"
+            }
+          }
+        ],
+        "tags": [
+          "UsersService"
+        ]
+      }
+    },
+    "/v1/user/register": {
+      "post": {
+        "summary": "注册用户",
+        "operationId": "UsersService_Register",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/usersRegisterResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/usersRegisterRequest"
+            }
+          }
+        ],
+        "tags": [
+          "UsersService"
+        ]
+      }
+    },
+    "/v1/user/state/login": {
+      "put": {
+        "summary": "更新用户登录态",
+        "operationId": "UsersService_UpdateUserLoginState",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/usersUpdateUserLoginStateResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/usersUpdateUserLoginStateRequest"
+            }
+          }
+        ],
+        "tags": [
+          "UsersService"
+        ]
+      }
     }
   },
   "definitions": {
-    "usersAccountState": {
-      "type": "string",
-      "enum": [
-        "NORMAL",
-        "LOCK",
-        "INVALID"
-      ],
-      "default": "NORMAL"
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "type_url": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string",
+          "format": "byte"
+        }
+      }
     },
-    "usersAccountType": {
-      "type": "string",
-      "enum": [
-        "PERSONAL",
-        "COMPANY",
-        "SYSTEM"
-      ],
-      "default": "PERSONAL"
+    "runtimeError": {
+      "type": "object",
+      "properties": {
+        "error": {
+          "type": "string"
+        },
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/protobufAny"
+          }
+        }
+      }
     },
-    "usersCoinType": {
-      "type": "string",
-      "enum": [
-        "CNY",
-        "USD"
-      ],
-      "default": "CNY"
+    "usersCheckUserByPhoneResponse": {
+      "type": "object",
+      "properties": {
+        "common": {
+          "$ref": "#/definitions/usersCommonResponse"
+        },
+        "is_exist": {
+          "type": "boolean",
+          "format": "boolean"
+        }
+      }
+    },
+    "usersCheckUserIdentityResponse": {
+      "type": "object",
+      "properties": {
+        "common": {
+          "$ref": "#/definitions/usersCommonResponse"
+        }
+      }
     },
     "usersCommonResponse": {
       "type": "object",
@@ -239,37 +518,10 @@
         }
       }
     },
-    "usersCreateUserAccountRequest": {
+    "usersEmail": {
       "type": "object",
       "properties": {
-        "uid": {
-          "type": "string",
-          "format": "int64"
-        },
-        "balance": {
-          "type": "string"
-        },
-        "coin_type": {
-          "$ref": "#/definitions/usersCoinType"
-        },
-        "coin_desc": {
-          "type": "string"
-        },
-        "account_state": {
-          "$ref": "#/definitions/usersAccountState"
-        },
-        "account_type": {
-          "$ref": "#/definitions/usersAccountType"
-        }
-      }
-    },
-    "usersCreateUserAccountResponse": {
-      "type": "object",
-      "properties": {
-        "common": {
-          "$ref": "#/definitions/usersCommonResponse"
-        },
-        "account_code": {
+        "content": {
           "type": "string"
         }
       }
@@ -282,6 +534,17 @@
         },
         "info": {
           "$ref": "#/definitions/usersMerchantsMaterialInfo"
+        }
+      }
+    },
+    "usersGetUserByInviteCodeResponse": {
+      "type": "object",
+      "properties": {
+        "common": {
+          "$ref": "#/definitions/usersCommonResponse"
+        },
+        "info": {
+          "$ref": "#/definitions/usersUserInfo"
         }
       }
     },
@@ -304,6 +567,87 @@
         },
         "info": {
           "$ref": "#/definitions/usersUserInfo"
+        }
+      }
+    },
+    "usersLoginByPassword": {
+      "type": "object",
+      "properties": {
+        "login_kind": {
+          "$ref": "#/definitions/usersLoginPwdKind"
+        },
+        "email": {
+          "$ref": "#/definitions/usersEmail"
+        },
+        "phone": {
+          "$ref": "#/definitions/usersMobilePhone"
+        },
+        "pwd": {
+          "type": "string"
+        }
+      }
+    },
+    "usersLoginPwdKind": {
+      "type": "string",
+      "enum": [
+        "MOBILE_PHONE",
+        "EMAIL"
+      ],
+      "default": "MOBILE_PHONE"
+    },
+    "usersLoginToken": {
+      "type": "object",
+      "properties": {
+        "token": {
+          "type": "string"
+        }
+      }
+    },
+    "usersLoginType": {
+      "type": "string",
+      "enum": [
+        "PWD",
+        "VERIFY_CODE",
+        "TOKEN"
+      ],
+      "default": "PWD"
+    },
+    "usersLoginUserRequest": {
+      "type": "object",
+      "properties": {
+        "login_type": {
+          "$ref": "#/definitions/usersLoginType"
+        },
+        "pwd": {
+          "$ref": "#/definitions/usersLoginByPassword"
+        },
+        "verify_code": {
+          "$ref": "#/definitions/usersLoginVerifyCode"
+        },
+        "token": {
+          "$ref": "#/definitions/usersLoginToken"
+        }
+      }
+    },
+    "usersLoginUserResponse": {
+      "type": "object",
+      "properties": {
+        "common": {
+          "$ref": "#/definitions/usersCommonResponse"
+        },
+        "identity_token": {
+          "type": "string"
+        }
+      }
+    },
+    "usersLoginVerifyCode": {
+      "type": "object",
+      "properties": {
+        "phone": {
+          "$ref": "#/definitions/usersMobilePhone"
+        },
+        "verify_code": {
+          "type": "string"
         }
       }
     },
@@ -430,6 +774,17 @@
         }
       }
     },
+    "usersMobilePhone": {
+      "type": "object",
+      "properties": {
+        "country_code": {
+          "type": "string"
+        },
+        "phone": {
+          "type": "string"
+        }
+      }
+    },
     "usersOperationType": {
       "type": "string",
       "enum": [
@@ -439,6 +794,87 @@
         "AUDIT"
       ],
       "default": "CREATE"
+    },
+    "usersPasswordResetRequest": {
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "format": "int64"
+        },
+        "pwd": {
+          "type": "string"
+        }
+      }
+    },
+    "usersPasswordResetResponse": {
+      "type": "object",
+      "properties": {
+        "common": {
+          "$ref": "#/definitions/usersCommonResponse"
+        }
+      }
+    },
+    "usersRegisterRequest": {
+      "type": "object",
+      "properties": {
+        "user_name": {
+          "type": "string"
+        },
+        "sex": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "country_code": {
+          "type": "string"
+        },
+        "phone": {
+          "type": "string"
+        },
+        "email": {
+          "type": "string"
+        },
+        "state": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "id_card_no": {
+          "type": "string"
+        },
+        "inviter_user": {
+          "type": "string",
+          "format": "int64"
+        },
+        "contact_addr": {
+          "type": "string"
+        },
+        "age": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "password": {
+          "type": "string"
+        }
+      }
+    },
+    "usersRegisterResponse": {
+      "type": "object",
+      "properties": {
+        "common": {
+          "$ref": "#/definitions/usersCommonResponse"
+        },
+        "result": {
+          "$ref": "#/definitions/usersRegisterResult"
+        }
+      }
+    },
+    "usersRegisterResult": {
+      "type": "object",
+      "properties": {
+        "invite_code": {
+          "type": "string"
+        }
+      }
     },
     "usersRetCode": {
       "type": "string",
@@ -450,9 +886,31 @@
         "MERCHANT_NOT_EXIST",
         "MERCHANT_EXIST",
         "ACCOUNT_EXIST",
-        "ACCOUNT_NOT_EXIST"
+        "ACCOUNT_NOT_EXIST",
+        "USER_PWD_NOT_MATCH",
+        "USER_LOGIN_NOT_ALLOW"
       ],
       "default": "SUCCESS"
+    },
+    "usersUpdateUserLoginStateRequest": {
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "format": "int64"
+        },
+        "state": {
+          "$ref": "#/definitions/usersUserLoginState"
+        }
+      }
+    },
+    "usersUpdateUserLoginStateResponse": {
+      "type": "object",
+      "properties": {
+        "common": {
+          "$ref": "#/definitions/usersCommonResponse"
+        }
+      }
     },
     "usersUserInfo": {
       "type": "object",
@@ -506,6 +964,18 @@
         },
         "update_time": {
           "type": "string"
+        }
+      }
+    },
+    "usersUserLoginState": {
+      "type": "object",
+      "properties": {
+        "content": {
+          "type": "string"
+        },
+        "time": {
+          "type": "string",
+          "format": "int64"
         }
       }
     }

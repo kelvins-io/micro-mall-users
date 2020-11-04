@@ -11,6 +11,7 @@ const (
 	SectionEmailConfig             = "email-config"
 	SectionQueueUserRegisterNotice = "queue-user-register-notice"
 	SectionQueueUserStateNotice    = "queue-user-state-notice"
+	SectionJwt                     = "kelvins-jwt"
 )
 
 // LoadConfig 加载配置对象映射
@@ -27,5 +28,9 @@ func LoadConfig() error {
 	log.Printf("[info] Load default config %s", SectionQueueUserStateNotice)
 	vars.QueueAMQPSettingUserStateNotice = new(setting.QueueAMQPSettingS)
 	config.MapConfig(SectionQueueUserStateNotice, vars.QueueAMQPSettingUserStateNotice)
+	// 用户认证token
+	log.Printf("[info] Load default config %s", SectionJwt)
+	vars.JwtSetting = new(vars.JwtSettingS)
+	config.MapConfig(SectionJwt, vars.JwtSetting)
 	return nil
 }

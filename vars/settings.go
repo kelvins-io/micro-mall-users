@@ -6,3 +6,8 @@ type EmailConfigSettingS struct {
 	Host     string `json:"host"`
 	Port     string `json:"port"`
 }
+
+type JwtSettingS struct {
+	Secret            string
+	TokenExpireSecond int
+}

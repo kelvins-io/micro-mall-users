@@ -12,6 +12,7 @@ cloud.google.com/go/pubsub/internal/scheduler
 # gitee.com/kelvins-io/common v1.0.2
 gitee.com/kelvins-io/common/conf
 gitee.com/kelvins-io/common/convert
+gitee.com/kelvins-io/common/crypt
 gitee.com/kelvins-io/common/env
 gitee.com/kelvins-io/common/errcode
 gitee.com/kelvins-io/common/event
@@ -20,10 +21,12 @@ gitee.com/kelvins-io/common/gtool
 gitee.com/kelvins-io/common/gtool/grpc_interceptor
 gitee.com/kelvins-io/common/json
 gitee.com/kelvins-io/common/log
+gitee.com/kelvins-io/common/password
 gitee.com/kelvins-io/common/proto/common
 gitee.com/kelvins-io/common/proto/google/api
 gitee.com/kelvins-io/common/ptool
 gitee.com/kelvins-io/common/queue
+gitee.com/kelvins-io/common/random
 # gitee.com/kelvins-io/kelvins v1.1.2
 gitee.com/kelvins-io/kelvins
 gitee.com/kelvins-io/kelvins/app
@@ -147,6 +150,8 @@ github.com/coreos/etcd/pkg/types
 github.com/coreos/etcd/version
 # github.com/coreos/go-semver v0.3.0
 github.com/coreos/go-semver/semver
+# github.com/dgrijalva/jwt-go v3.2.0+incompatible
+github.com/dgrijalva/jwt-go
 # github.com/dgryski/go-rendezvous v0.0.0-20200624174652-8d2f3be8b2d9
 github.com/dgryski/go-rendezvous
 # github.com/elastic/go-sysinfo v1.1.1

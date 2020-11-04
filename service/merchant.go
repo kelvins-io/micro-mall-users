@@ -73,7 +73,7 @@ func MerchantsMaterial(ctx context.Context, req *users.MerchantsMaterialRequest)
 }
 
 func GetMerchantsMaterial(ctx context.Context, req *users.GetMerchantsMaterialRequest) (*mysql.Merchant, int) {
-	merchantInfo, err := repository.GetMerchantsMaterialByUid(int(req.MaterialId))
+	merchantInfo, err := repository.GetMerchantsMaterial(int(req.MaterialId))
 	if err != nil {
 		kelvins.ErrLogger.Errorf(ctx, "GetMerchantsMaterialByUid err: %v,MaterialId : %+v", err, req.ProtoMessage)
 		return merchantInfo, code.ErrorServer

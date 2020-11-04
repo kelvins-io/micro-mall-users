@@ -31,15 +31,29 @@ func GetUserAccountIdByUid(uid int64) (*mysql.User, error) {
 	return &user, err
 }
 
-func UpdateUserInfo(query, maps map[string]interface{}) (err error) {
+func UpdateUserInfo(query, maps interface{}) (err error) {
 	_, err = kelvins.XORM_DBEngine.Table(mysql.TableUser).Where(query).Update(maps)
 	return
+}
+
+func GetUserByEmail(email string) (*mysql.User, error) {
+	var user mysql.User
+	var err error
+	_, err = kelvins.XORM_DBEngine.Table(mysql.TableUser).Where("email = ? ", email).Get(&user)
+	return &user, err
 }
 
 func GetUserByPhone(countryCode, phone string) (*mysql.User, error) {
 	var user mysql.User
 	var err error
 	_, err = kelvins.XORM_DBEngine.Table(mysql.TableUser).Where("country_code = ? and phone = ?", countryCode, phone).Get(&user)
+	return &user, err
+}
+
+func GetUserByInviteCode(inviteCode string) (*mysql.User, error) {
+	var user mysql.User
+	var err error
+	_, err = kelvins.XORM_DBEngine.Table(mysql.TableUser).Where("invite_code = ?", inviteCode).Get(&user)
 	return &user, err
 }
 
@@ -66,7 +80,7 @@ func CheckUserExistByPhone(countryCode, phone string) (exist bool, err error) {
 	if err != nil {
 		return false, err
 	}
-	if user.Id != 0 {
+	if user.Id > 0 {
 		return true, nil
 	}
 

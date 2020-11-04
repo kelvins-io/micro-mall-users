@@ -12,6 +12,7 @@ const (
 	MerchantNotExist = 29000009
 	AccountExist     = 29000010
 	AccountNotExist  = 29000011
+	UserPwdNotMatch  = 29000012
 )
 
 var ErrMap = make(map[int]string)
@@ -27,9 +28,18 @@ func init() {
 		MerchantNotExist: "商户未提交材料",
 		AccountExist:     "账户已存在",
 		AccountNotExist:  "账户不存在",
+		UserPwdNotMatch:  "用户密码不匹配",
 	}
 	errcode.RegisterErrMsgDict(dict)
 	for key, _ := range dict {
 		ErrMap[key] = dict[key]
 	}
+}
+
+func GetMsg(code int) string {
+	v, ok := ErrMap[code]
+	if !ok {
+		return ""
+	}
+	return v
 }
