@@ -270,3 +270,104 @@ func GetUserInfoByInviteCode(ctx context.Context, inviteCode string) (*mysql.Use
 	}
 	return user, code.Success
 }
+
+func ModifyUserDeliveryInfo(ctx context.Context, req *users.ModifyUserDeliveryInfoRequest) int {
+	if req.OperationType == users.OperationType_CREATE {
+		deliveryInfo := &mysql.UserLogisticsDelivery{
+			Uid:          req.Uid,
+			DeliveryUser: req.Info.DeliveryUser,
+			MobilePhone:  req.Info.MobilePhone,
+			Area:         req.Info.Area,
+			AreaDetailed: req.Info.DetailedArea,
+			Label:        strings.Join(req.Info.Label, "|"),
+			IsDefault:    int(req.Info.IsDefault),
+			CreateTime:   time.Now(),
+			UpdateTime:   time.Now(),
+		}
+		err := repository.CreateUserLogisticsDelivery(deliveryInfo)
+		if err != nil {
+			kelvins.ErrLogger.Errorf(ctx, "CreateUserLogisticsDelivery err: %v, deliveryInfo: %v", err, deliveryInfo)
+			return code.ErrorServer
+		}
+		return code.Success
+	} else if req.OperationType == users.OperationType_UPDATE {
+		if req.Info.Id <= 0 {
+			return code.UserDeliveryInfoNotExist
+		}
+		deliveryInfoDB, err := repository.GetUserLogisticsDelivery(req.Uid, req.Info.Id)
+		if err != nil {
+			kelvins.ErrLogger.Errorf(ctx, "GetUserLogisticsDelivery err: %v, id: %v", err, req.Info.Id)
+			return code.ErrorServer
+		}
+		if deliveryInfoDB.Id <= 0 || deliveryInfoDB.Uid <= 0 {
+			return code.UserDeliveryInfoNotExist
+		}
+		deliveryInfo := &mysql.UserLogisticsDelivery{
+			DeliveryUser: req.Info.DeliveryUser,
+			MobilePhone:  req.Info.MobilePhone,
+			Area:         req.Info.Area,
+			AreaDetailed: req.Info.DetailedArea,
+			Label:        strings.Join(req.Info.Label, "|"),
+			IsDefault:    int(req.Info.IsDefault),
+			UpdateTime:   time.Now(),
+		}
+		where := map[string]interface{}{
+			"id": req.Info.Id,
+		}
+		rowsAffected, err := repository.UpdateUserLogisticsDelivery(where, deliveryInfo)
+		if err != nil {
+			kelvins.ErrLogger.Errorf(ctx, "UpdateUserLogisticsDelivery err: %v,id: %v, deliveryInfo: %v", err, req.Info.Id, deliveryInfo)
+			return code.ErrorServer
+		}
+		if rowsAffected != 1 {
+			return code.TransactionFailed
+		}
+		return code.Success
+	}
+
+	return code.Success
+}
+
+func GetUserDeliveryInfo(ctx context.Context, req *users.GetUserDeliveryInfoRequest) ([]*users.UserDeliveryInfo, int) {
+	result := make([]*users.UserDeliveryInfo, 0)
+	if req.Uid <= 0 {
+		return result, code.UserNotExist
+	}
+	if req.UserDeliveryId <= 0 {
+		list, err := repository.GetUserLogisticsDeliveryList(req.Uid, int64(req.UserDeliveryId))
+		if err != nil {
+			kelvins.ErrLogger.Errorf(ctx, "GetUserLogisticsDeliveryList err: %v, uid: %v", err, req.Uid)
+			return result, code.ErrorServer
+		}
+		result = make([]*users.UserDeliveryInfo, len(list))
+		for i := 0; i < len(list); i++ {
+			info := &users.UserDeliveryInfo{
+				Id:           list[i].Id,
+				DeliveryUser: list[i].DeliveryUser,
+				MobilePhone:  list[i].MobilePhone,
+				Area:         list[i].Area,
+				DetailedArea: list[i].AreaDetailed,
+				Label:        strings.Split(list[i].Label, "|"),
+				IsDefault:    users.IsDefaultType(list[i].IsDefault),
+			}
+			result[i] = info
+		}
+	} else {
+		infoDB, err := repository.GetUserLogisticsDelivery(req.Uid, int64(req.UserDeliveryId))
+		if err != nil {
+			kelvins.ErrLogger.Errorf(ctx, "GetUserLogisticsDelivery err: %v, uid: %v,id: %v", err, req.Uid, req.UserDeliveryId)
+			return result, code.ErrorServer
+		}
+		info := &users.UserDeliveryInfo{
+			Id:           infoDB.Id,
+			DeliveryUser: infoDB.DeliveryUser,
+			MobilePhone:  infoDB.MobilePhone,
+			Area:         infoDB.Area,
+			DetailedArea: infoDB.AreaDetailed,
+			Label:        strings.Split(infoDB.Label, "|"),
+			IsDefault:    users.IsDefaultType(infoDB.IsDefault),
+		}
+		result = append(result, info)
+	}
+	return result, code.Success
+}

@@ -123,6 +123,76 @@
         ]
       }
     },
+    "/v1/user/info/delivery": {
+      "get": {
+        "summary": "获取用户收货信息",
+        "operationId": "UsersService_GetUserDeliveryInfo",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/usersGetUserDeliveryInfoResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "uid",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "int64"
+          },
+          {
+            "name": "user_delivery_id",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          }
+        ],
+        "tags": [
+          "UsersService"
+        ]
+      },
+      "put": {
+        "summary": "修改用户收货信息",
+        "operationId": "UsersService_ModifyUserDeliveryInfo",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/usersModifyUserDeliveryInfoResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/usersModifyUserDeliveryInfoRequest"
+            }
+          }
+        ],
+        "tags": [
+          "UsersService"
+        ]
+      }
+    },
     "/v1/user/info/invite_code": {
       "get": {
         "summary": "根据邀请码获取邀请人",
@@ -548,6 +618,20 @@
         }
       }
     },
+    "usersGetUserDeliveryInfoResponse": {
+      "type": "object",
+      "properties": {
+        "common": {
+          "$ref": "#/definitions/usersCommonResponse"
+        },
+        "info": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/usersUserDeliveryInfo"
+          }
+        }
+      }
+    },
     "usersGetUserInfoByPhoneResponse": {
       "type": "object",
       "properties": {
@@ -569,6 +653,14 @@
           "$ref": "#/definitions/usersUserInfo"
         }
       }
+    },
+    "usersIsDefaultType": {
+      "type": "string",
+      "enum": [
+        "DEFAULT_TYPE_FALSE",
+        "DEFAULT_TYPE_TRUE"
+      ],
+      "default": "DEFAULT_TYPE_FALSE"
     },
     "usersLoginByPassword": {
       "type": "object",
@@ -785,6 +877,29 @@
         }
       }
     },
+    "usersModifyUserDeliveryInfoRequest": {
+      "type": "object",
+      "properties": {
+        "operation_type": {
+          "$ref": "#/definitions/usersOperationType"
+        },
+        "info": {
+          "$ref": "#/definitions/usersUserDeliveryInfo"
+        },
+        "uid": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
+    "usersModifyUserDeliveryInfoResponse": {
+      "type": "object",
+      "properties": {
+        "common": {
+          "$ref": "#/definitions/usersCommonResponse"
+        }
+      }
+    },
     "usersOperationType": {
       "type": "string",
       "enum": [
@@ -888,7 +1003,10 @@
         "ACCOUNT_EXIST",
         "ACCOUNT_NOT_EXIST",
         "USER_PWD_NOT_MATCH",
-        "USER_LOGIN_NOT_ALLOW"
+        "USER_LOGIN_NOT_ALLOW",
+        "USER_DELIVERY_INFO_EXIST",
+        "USER_DELIVERY_INFO_NOT_EXIST",
+        "TRANSACTION_FAILED"
       ],
       "default": "SUCCESS"
     },
@@ -909,6 +1027,36 @@
       "properties": {
         "common": {
           "$ref": "#/definitions/usersCommonResponse"
+        }
+      }
+    },
+    "usersUserDeliveryInfo": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "int64"
+        },
+        "delivery_user": {
+          "type": "string"
+        },
+        "mobile_phone": {
+          "type": "string"
+        },
+        "area": {
+          "type": "string"
+        },
+        "detailed_area": {
+          "type": "string"
+        },
+        "label": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "is_default": {
+          "$ref": "#/definitions/usersIsDefaultType"
         }
       }
     },

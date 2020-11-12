@@ -6,11 +6,25 @@ import (
 )
 
 const (
-	TableUser             = "user"
-	TableMerchantInfo     = "merchant"
-	TableAccount          = "account"
-	TableVerifyCodeRecord = "verify_code_record"
+	TableUser                  = "user"
+	TableMerchantInfo          = "merchant"
+	TableAccount               = "account"
+	TableVerifyCodeRecord      = "verify_code_record"
+	TableUserLogisticsDelivery = "user_logistics_delivery"
 )
+
+type UserLogisticsDelivery struct {
+	Id           int64     `xorm:"pk autoincr comment('自增ID') BIGINT"`
+	Uid          int64     `xorm:"comment('用户ID') index BIGINT"`
+	DeliveryUser string    `xorm:"comment('交付人') VARCHAR(512)"`
+	MobilePhone  string    `xorm:"comment('手机号') VARCHAR(255)"`
+	Area         string    `xorm:"comment('交付区域') VARCHAR(255)"`
+	AreaDetailed string    `xorm:"comment('详细地址') TEXT"`
+	Label        string    `xorm:"comment('标签，多个以|分割开') TEXT"`
+	IsDefault    int       `xorm:"default 0 comment('是否为默认，1-默认') TINYINT"`
+	CreateTime   time.Time `xorm:"not null default CURRENT_TIMESTAMP comment('创建时间') DATETIME"`
+	UpdateTime   time.Time `xorm:"not null default CURRENT_TIMESTAMP comment('更新时间') DATETIME"`
+}
 
 type Account struct {
 	AccountCode string    `xorm:"not null pk comment('账户主键') CHAR(50)"`
