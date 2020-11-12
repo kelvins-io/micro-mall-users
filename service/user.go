@@ -24,23 +24,30 @@ func RegisterUser(ctx context.Context, req *users.RegisterRequest) (args.Registe
 	retCode := code.Success
 	salt := password.GenerateSalt()
 	pwd := password.GeneratePassword(req.Password, salt)
-	var user = mysql.User{
+	idCardNo := sql.NullString{
+		String: req.IdCardNo,
+		Valid:  false,
+	}
+	if req.IdCardNo != "" {
+		idCardNo.Valid = true
+	}
+	user := mysql.User{
 		AccountId:    GenAccountId(),
 		UserName:     req.UserName,
 		Password:     pwd,
 		PasswordSalt: salt,
 		Sex:          int(req.Sex),
+		Age:          int(req.Age),
+		ContactAddr:  req.ContactAddr,
 		Phone:        req.Phone,
 		CountryCode:  req.CountryCode,
 		Email:        req.Email,
 		State:        0,
-		IdCardNo: sql.NullString{
-			String: req.IdCardNo,
-		},
-		Inviter:    int(req.InviterUser),
-		InviteCode: GenInviterCode(),
-		CreateTime: time.Now(),
-		UpdateTime: time.Now(),
+		IdCardNo:     idCardNo,
+		Inviter:      int(req.InviterUser),
+		InviteCode:   GenInviterCode(),
+		CreateTime:   time.Now(),
+		UpdateTime:   time.Now(),
 	}
 	err := repository.CreateUser(&user)
 	if err != nil {

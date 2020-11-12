@@ -129,9 +129,7 @@ func (u *UsersServer) Register(ctx context.Context, req *users.RegisterRequest) 
 	result := &users.RegisterResponse{
 		Common: &users.CommonResponse{
 			Code: users.RetCode_SUCCESS,
-			Msg:  "",
 		},
-		Result: nil,
 	}
 	reg, retCode := service.RegisterUser(ctx, req)
 	if retCode != code.Success {
@@ -151,8 +149,7 @@ func (u *UsersServer) Register(ctx context.Context, req *users.RegisterRequest) 
 func (u *UsersServer) LoginUser(ctx context.Context, req *users.LoginUserRequest) (*users.LoginUserResponse, error) {
 	result := &users.LoginUserResponse{
 		Common: &users.CommonResponse{
-			Code: code.Success,
-			Msg:  "",
+			Code: users.RetCode_SUCCESS,
 		},
 	}
 	token, retCode := service.LoginUser(ctx, req)
