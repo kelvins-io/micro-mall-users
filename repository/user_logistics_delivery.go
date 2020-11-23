@@ -10,18 +10,15 @@ func CreateUserLogisticsDelivery(model *mysql.UserLogisticsDelivery) error {
 	return err
 }
 
-func GetUserLogisticsDelivery(uid, id int64) (*mysql.UserLogisticsDelivery, error) {
+func GetUserLogisticsDelivery(sqlSelect string, uid, id int64) (*mysql.UserLogisticsDelivery, error) {
 	var model mysql.UserLogisticsDelivery
-	_, err := kelvins.XORM_DBEngine.Table(mysql.TableUserLogisticsDelivery).Where("id = ? AND uid = ?", id, uid).Get(&model)
+	_, err := kelvins.XORM_DBEngine.Table(mysql.TableUserLogisticsDelivery).Select(sqlSelect).Where("id = ? AND uid = ?", id, uid).Get(&model)
 	return &model, err
 }
 
-func GetUserLogisticsDeliveryList(uid, id int64) ([]mysql.UserLogisticsDelivery, error) {
+func GetUserLogisticsDeliveryList(sqlSelect string, uid int64) ([]mysql.UserLogisticsDelivery, error) {
 	var result = make([]mysql.UserLogisticsDelivery, 0)
-	session := kelvins.XORM_DBEngine.Table(mysql.TableUserLogisticsDelivery).Where("uid = ?", uid)
-	if id > 0 {
-		session = session.Where("id = ?", id)
-	}
+	session := kelvins.XORM_DBEngine.Table(mysql.TableUserLogisticsDelivery).Select(sqlSelect).Where("uid = ?", uid)
 	err := session.Find(&result)
 	return result, err
 }

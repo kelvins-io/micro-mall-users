@@ -43,7 +43,7 @@ func MerchantsMaterial(ctx context.Context, req *users.MerchantsMaterialRequest)
 			kelvins.ErrLogger.Errorf(ctx, "CreateMerchantsMaterial err: %v,merchantMaterial : %+v", err, merchantMaterial)
 			return merchantId, code.ErrorServer
 		}
-		record, err := repository.GetMerchantsMaterialByUid(int(req.Info.Uid))
+		record, err := repository.GetMerchantIdByUid(int(req.Info.Uid))
 		if err != nil {
 			kelvins.ErrLogger.Errorf(ctx, "GetMerchantsMaterialByUid err: %v,uid : %+v", err, req.Info.Uid)
 			return merchantId, code.ErrorServer

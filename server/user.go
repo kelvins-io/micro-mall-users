@@ -297,3 +297,19 @@ func (u *UsersServer) GetUserDeliveryInfo(ctx context.Context, req *users.GetUse
 	result.Info = list
 	return result, nil
 }
+
+func (u *UsersServer) FindUserInfo(ctx context.Context, req *users.FindUserInfoRequest) (*users.FindUserInfoResponse, error) {
+	result := &users.FindUserInfoResponse{
+		Common: &users.CommonResponse{
+			Code: users.RetCode_SUCCESS,
+		},
+		InfoList: nil,
+	}
+	userInfoList, retCode := service.FindUserInfo(ctx, req)
+	if retCode != code.Success {
+		result.Common.Code = users.RetCode_ERROR
+		return result, nil
+	}
+	result.InfoList = userInfoList
+	return result, nil
+}

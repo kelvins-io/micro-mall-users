@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"fmt"
 	"gitee.com/cristiane/micro-mall-users/pkg/code"
 	"gitee.com/cristiane/micro-mall-users/pkg/util"
 	"gitee.com/cristiane/micro-mall-users/proto/micro_mall_users_proto/users"
@@ -19,8 +18,7 @@ func NewMerchantsServer() users.MerchantsServiceServer {
 func (m *MerchantsServer) MerchantsMaterial(ctx context.Context, req *users.MerchantsMaterialRequest) (*users.MerchantsMaterialResponse, error) {
 	var result users.MerchantsMaterialResponse
 	result.Common = &users.CommonResponse{
-		Code: 0,
-		Msg:  "",
+		Code: users.RetCode_SUCCESS,
 	}
 	if req.Info.Uid <= 0 {
 		result.Common.Code = users.RetCode_USER_NOT_EXIST
@@ -46,9 +44,6 @@ func (m *MerchantsServer) MerchantsMaterial(ctx context.Context, req *users.Merc
 			result.Common.Code = users.RetCode_ERROR
 			result.Common.Msg = errcode.GetErrMsg(code.ErrorServer)
 		}
-	} else {
-		result.Common.Code = users.RetCode_SUCCESS
-		result.Common.Msg = errcode.GetErrMsg(code.Success)
 	}
 
 	return &result, nil
@@ -61,7 +56,7 @@ func (m *MerchantsServer) MerchantsMaterialAudit(ctx context.Context, req *users
 func (m *MerchantsServer) GetMerchantsMaterial(ctx context.Context, req *users.GetMerchantsMaterialRequest) (*users.GetMerchantsMaterialResponse, error) {
 	var result users.GetMerchantsMaterialResponse
 	result.Common = &users.CommonResponse{
-		Code: 0,
+		Code: users.RetCode_SUCCESS,
 		Msg:  "",
 	}
 	result.Info = &users.MerchantsMaterialInfo{}
@@ -70,9 +65,7 @@ func (m *MerchantsServer) GetMerchantsMaterial(ctx context.Context, req *users.G
 		result.Common.Msg = errcode.GetErrMsg(code.MerchantNotExist)
 		return &result, nil
 	}
-	fmt.Println("开始获取商户认证材料")
 	merchantInfo, retCode := service.GetMerchantsMaterial(ctx, req)
-	fmt.Printf("商户认证资料 merchantInfo: %+v", merchantInfo)
 	if retCode != code.Success {
 		if retCode == code.UserExist {
 			result.Common.Code = users.RetCode_USER_EXIST
@@ -90,9 +83,6 @@ func (m *MerchantsServer) GetMerchantsMaterial(ctx context.Context, req *users.G
 			result.Common.Code = users.RetCode_ERROR
 			result.Common.Msg = errcode.GetErrMsg(code.ErrorServer)
 		}
-	} else {
-		result.Common.Code = users.RetCode_SUCCESS
-		result.Common.Msg = errcode.GetErrMsg(code.Success)
 	}
 	result.Info = &users.MerchantsMaterialInfo{
 		Uid:          int64(merchantInfo.Uid),

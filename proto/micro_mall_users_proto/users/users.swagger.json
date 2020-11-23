@@ -193,6 +193,42 @@
         ]
       }
     },
+    "/v1/user/info/find": {
+      "get": {
+        "summary": "查找用户信息",
+        "operationId": "UsersService_FindUserInfo",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/usersFindUserInfoResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "uid_list",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "int64"
+            },
+            "collectionFormat": "multi"
+          }
+        ],
+        "tags": [
+          "UsersService"
+        ]
+      }
+    },
     "/v1/user/info/invite_code": {
       "get": {
         "summary": "根据邀请码获取邀请人",
@@ -593,6 +629,20 @@
       "properties": {
         "content": {
           "type": "string"
+        }
+      }
+    },
+    "usersFindUserInfoResponse": {
+      "type": "object",
+      "properties": {
+        "common": {
+          "$ref": "#/definitions/usersCommonResponse"
+        },
+        "info_list": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/usersUserInfoMain"
+          }
         }
       }
     },
@@ -1114,6 +1164,32 @@
           "type": "string"
         }
       }
+    },
+    "usersUserInfoMain": {
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "format": "int64"
+        },
+        "name": {
+          "type": "string"
+        },
+        "country_code": {
+          "type": "string"
+        },
+        "phone": {
+          "type": "string"
+        },
+        "age": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "address": {
+          "type": "string"
+        }
+      },
+      "title": "用户主要信息"
     },
     "usersUserLoginState": {
       "type": "object",

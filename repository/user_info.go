@@ -10,11 +10,10 @@ func CreateUser(user *mysql.User) (err error) {
 	return
 }
 
-func GetUserByUserName(username string) (*mysql.User, error) {
-	var user mysql.User
-	var err error
-	_, err = kelvins.XORM_DBEngine.Table(mysql.TableUser).Where("user_name = ?", username).Get(&user)
-	return &user, err
+func FindUserInfo(sqlSelect string, uidList []int64) ([]mysql.User, error) {
+	var result = make([]mysql.User, 0)
+	err := kelvins.XORM_DBEngine.Table(mysql.TableUser).Select(sqlSelect).In("id", uidList).Find(&result)
+	return result, err
 }
 
 func GetUserByUid(uid int) (*mysql.User, error) {
@@ -24,29 +23,22 @@ func GetUserByUid(uid int) (*mysql.User, error) {
 	return &user, err
 }
 
-func GetUserAccountIdByUid(uid int64) (*mysql.User, error) {
-	var user mysql.User
-	var err error
-	_, err = kelvins.XORM_DBEngine.Table(mysql.TableUser).Select("account_id").Where("id = ?", uid).Get(&user)
-	return &user, err
-}
-
 func UpdateUserInfo(query, maps interface{}) (err error) {
 	_, err = kelvins.XORM_DBEngine.Table(mysql.TableUser).Where(query).Update(maps)
 	return
 }
 
-func GetUserByEmail(email string) (*mysql.User, error) {
+func GetUserByEmail(sqlSelect, email string) (*mysql.User, error) {
 	var user mysql.User
 	var err error
-	_, err = kelvins.XORM_DBEngine.Table(mysql.TableUser).Where("email = ? ", email).Get(&user)
+	_, err = kelvins.XORM_DBEngine.Table(mysql.TableUser).Select(sqlSelect).Where("email = ? ", email).Get(&user)
 	return &user, err
 }
 
-func GetUserByPhone(countryCode, phone string) (*mysql.User, error) {
+func GetUserByPhone(sqlSelect, countryCode, phone string) (*mysql.User, error) {
 	var user mysql.User
 	var err error
-	_, err = kelvins.XORM_DBEngine.Table(mysql.TableUser).Where("country_code = ? and phone = ?", countryCode, phone).Get(&user)
+	_, err = kelvins.XORM_DBEngine.Table(mysql.TableUser).Select(sqlSelect).Where("country_code = ? and phone = ?", countryCode, phone).Get(&user)
 	return &user, err
 }
 

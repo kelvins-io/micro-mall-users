@@ -87,6 +87,8 @@ func RegisterUser(ctx context.Context, req *users.RegisterRequest) (args.Registe
 	return result, retCode
 }
 
+const sqlSelectLoginUser = "id,user_name,password,password_salt"
+
 func LoginUser(ctx context.Context, req *users.LoginUserRequest) (string, int) {
 	result := ""
 	retCode := code.Success
@@ -94,7 +96,7 @@ func LoginUser(ctx context.Context, req *users.LoginUserRequest) (string, int) {
 	switch req.GetLoginType() {
 	case users.LoginType_VERIFY_CODE:
 		loginInfo := req.GetVerifyCode()
-		userDB, err := repository.GetUserByPhone(loginInfo.GetPhone().GetCountryCode(), loginInfo.GetPhone().GetPhone())
+		userDB, err := repository.GetUserByPhone(sqlSelectLoginUser, loginInfo.GetPhone().GetCountryCode(), loginInfo.GetPhone().GetPhone())
 		if err != nil {
 			kelvins.ErrLogger.Errorf(ctx, "GetUserByPhone err: %v, req: %+v", err, req)
 			return result, code.ErrorServer
@@ -105,7 +107,7 @@ func LoginUser(ctx context.Context, req *users.LoginUserRequest) (string, int) {
 		switch loginInfo.GetLoginKind() {
 		case users.LoginPwdKind_MOBILE_PHONE:
 			mobile := loginInfo.GetPhone()
-			userDB, err := repository.GetUserByPhone(mobile.GetCountryCode(), mobile.GetPhone())
+			userDB, err := repository.GetUserByPhone(sqlSelectLoginUser, mobile.GetCountryCode(), mobile.GetPhone())
 			if err != nil {
 				kelvins.ErrLogger.Errorf(ctx, "GetUserByPhone err: %v, req: %+v", err, req)
 				return result, code.ErrorServer
@@ -119,7 +121,7 @@ func LoginUser(ctx context.Context, req *users.LoginUserRequest) (string, int) {
 			}
 			user = userDB
 		case users.LoginPwdKind_EMAIL:
-			userDB, err := repository.GetUserByEmail(loginInfo.GetEmail().GetContent())
+			userDB, err := repository.GetUserByEmail(sqlSelectLoginUser, loginInfo.GetEmail().GetContent())
 			if err != nil {
 				kelvins.ErrLogger.Errorf(ctx, "GetUserByPhone err: %v, req: %+v", err, req)
 				return result, code.ErrorServer
@@ -155,7 +157,7 @@ func LoginUser(ctx context.Context, req *users.LoginUserRequest) (string, int) {
 }
 
 func CheckUserIdentity(ctx context.Context, req *users.CheckUserIdentityRequest) int {
-	userDB, err := repository.GetUserByPhone(req.GetCountryCode(), req.GetPhone())
+	userDB, err := repository.GetUserByPhone("password,password_salt", req.GetCountryCode(), req.GetPhone())
 	if err != nil {
 		kelvins.ErrLogger.Errorf(ctx, "GetUserByPhone err: %v, req: %+v", err, req)
 		return code.ErrorServer
@@ -252,7 +254,7 @@ func GetUserInfo(ctx context.Context, uid int) (*mysql.User, int) {
 }
 
 func GetUserInfoByPhone(ctx context.Context, countryCode, phone string) (*mysql.User, int) {
-	user, err := repository.GetUserByPhone(countryCode, phone)
+	user, err := repository.GetUserByPhone("*", countryCode, phone)
 	if err != nil {
 		kelvins.ErrLogger.Errorf(ctx, "GetUserByPhone err: %v, countryCode: %v, phone:%v", err, countryCode, phone)
 		return user, code.ErrorServer
@@ -283,7 +285,7 @@ func ModifyUserDeliveryInfo(ctx context.Context, req *users.ModifyUserDeliveryIn
 		deliveryInfo := &mysql.UserLogisticsDelivery{
 			Uid:          req.Uid,
 			DeliveryUser: req.Info.DeliveryUser,
-			MobilePhone:  req.Info.MobilePhone,
+			Phone:        req.Info.MobilePhone,
 			Area:         req.Info.Area,
 			AreaDetailed: req.Info.DetailedArea,
 			Label:        strings.Join(req.Info.Label, "|"),
@@ -301,7 +303,7 @@ func ModifyUserDeliveryInfo(ctx context.Context, req *users.ModifyUserDeliveryIn
 		if req.Info.Id <= 0 {
 			return code.UserDeliveryInfoNotExist
 		}
-		deliveryInfoDB, err := repository.GetUserLogisticsDelivery(req.Uid, req.Info.Id)
+		deliveryInfoDB, err := repository.GetUserLogisticsDelivery(sqlSelectUserDeliveryInfo, req.Uid, req.Info.Id)
 		if err != nil {
 			kelvins.ErrLogger.Errorf(ctx, "GetUserLogisticsDelivery err: %v, id: %v", err, req.Info.Id)
 			return code.ErrorServer
@@ -311,7 +313,7 @@ func ModifyUserDeliveryInfo(ctx context.Context, req *users.ModifyUserDeliveryIn
 		}
 		deliveryInfo := &mysql.UserLogisticsDelivery{
 			DeliveryUser: req.Info.DeliveryUser,
-			MobilePhone:  req.Info.MobilePhone,
+			Phone:        req.Info.MobilePhone,
 			Area:         req.Info.Area,
 			AreaDetailed: req.Info.DetailedArea,
 			Label:        strings.Join(req.Info.Label, "|"),
@@ -335,13 +337,15 @@ func ModifyUserDeliveryInfo(ctx context.Context, req *users.ModifyUserDeliveryIn
 	return code.Success
 }
 
+const sqlSelectUserDeliveryInfo = "id,delivery_user,country_code,phone,area,area_detailed,is_default,label"
+
 func GetUserDeliveryInfo(ctx context.Context, req *users.GetUserDeliveryInfoRequest) ([]*users.UserDeliveryInfo, int) {
 	result := make([]*users.UserDeliveryInfo, 0)
 	if req.Uid <= 0 {
 		return result, code.UserNotExist
 	}
 	if req.UserDeliveryId <= 0 {
-		list, err := repository.GetUserLogisticsDeliveryList(req.Uid, int64(req.UserDeliveryId))
+		list, err := repository.GetUserLogisticsDeliveryList(sqlSelectUserDeliveryInfo, req.Uid)
 		if err != nil {
 			kelvins.ErrLogger.Errorf(ctx, "GetUserLogisticsDeliveryList err: %v, uid: %v", err, req.Uid)
 			return result, code.ErrorServer
@@ -351,7 +355,7 @@ func GetUserDeliveryInfo(ctx context.Context, req *users.GetUserDeliveryInfoRequ
 			info := &users.UserDeliveryInfo{
 				Id:           list[i].Id,
 				DeliveryUser: list[i].DeliveryUser,
-				MobilePhone:  list[i].MobilePhone,
+				MobilePhone:  fmt.Sprintf("%s-%s", list[i].CountryCode, list[i].Phone),
 				Area:         list[i].Area,
 				DetailedArea: list[i].AreaDetailed,
 				Label:        strings.Split(list[i].Label, "|"),
@@ -360,7 +364,7 @@ func GetUserDeliveryInfo(ctx context.Context, req *users.GetUserDeliveryInfoRequ
 			result[i] = info
 		}
 	} else {
-		infoDB, err := repository.GetUserLogisticsDelivery(req.Uid, int64(req.UserDeliveryId))
+		infoDB, err := repository.GetUserLogisticsDelivery(sqlSelectUserDeliveryInfo, req.Uid, int64(req.UserDeliveryId))
 		if err != nil {
 			kelvins.ErrLogger.Errorf(ctx, "GetUserLogisticsDelivery err: %v, uid: %v,id: %v", err, req.Uid, req.UserDeliveryId)
 			return result, code.ErrorServer
@@ -368,7 +372,7 @@ func GetUserDeliveryInfo(ctx context.Context, req *users.GetUserDeliveryInfoRequ
 		info := &users.UserDeliveryInfo{
 			Id:           infoDB.Id,
 			DeliveryUser: infoDB.DeliveryUser,
-			MobilePhone:  infoDB.MobilePhone,
+			MobilePhone:  fmt.Sprintf("%s-%s", infoDB.CountryCode, infoDB.Phone),
 			Area:         infoDB.Area,
 			DetailedArea: infoDB.AreaDetailed,
 			Label:        strings.Split(infoDB.Label, "|"),
