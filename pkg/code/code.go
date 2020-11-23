@@ -16,6 +16,8 @@ const (
 	UserDeliveryInfoExist    = 29000013
 	UserDeliveryInfoNotExist = 29000014
 	TransactionFailed        = 29000015
+	AccountStateLock         = 29000016
+	AccountStateInvalid      = 29000017
 )
 
 var ErrMap = make(map[int]string)
@@ -35,6 +37,8 @@ func init() {
 		UserDeliveryInfoExist:    "用户物流交付信息存在",
 		UserDeliveryInfoNotExist: "用户物流交付信息不存在",
 		TransactionFailed:        "事务执行失败",
+		AccountStateLock:         "用户账户锁定中",
+		AccountStateInvalid:      "用户账户无效",
 	}
 	errcode.RegisterErrMsgDict(dict)
 	for key, _ := range dict {

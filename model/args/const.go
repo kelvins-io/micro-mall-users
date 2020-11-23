@@ -82,3 +82,7 @@ type UserOnlineState struct {
 	State string `json:"state"`
 	Time  string `json:"time"`
 }
+
+const (
+	RpcServiceMicroMallPay = "micro-mall-pay"
+)

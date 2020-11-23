@@ -313,3 +313,29 @@ func (u *UsersServer) FindUserInfo(ctx context.Context, req *users.FindUserInfoR
 	result.InfoList = userInfoList
 	return result, nil
 }
+
+func (u *UsersServer) UserAccountCharge(ctx context.Context, req *users.UserAccountChargeRequest) (*users.UserAccountChargeResponse, error) {
+	result := &users.UserAccountChargeResponse{Common: &users.CommonResponse{
+		Code: users.RetCode_SUCCESS,
+		Msg:  "",
+	}}
+	retCode := service.UserAccountCharge(ctx, req)
+	if retCode != code.Success {
+		switch retCode {
+		case code.UserNotExist:
+			result.Common.Code = users.RetCode_USER_NOT_EXIST
+		case code.AccountNotExist:
+			result.Common.Code = users.RetCode_ACCOUNT_NOT_EXIST
+		case code.TransactionFailed:
+			result.Common.Code = users.RetCode_TRANSACTION_FAILED
+		case code.AccountStateLock:
+			result.Common.Code = users.RetCode_ACCOUNT_LOCK
+		case code.AccountStateInvalid:
+			result.Common.Code = users.RetCode_ACCOUNT_INVALID
+		default:
+			result.Common.Code = users.RetCode_ERROR
+		}
+		return result, nil
+	}
+	return result, nil
+}

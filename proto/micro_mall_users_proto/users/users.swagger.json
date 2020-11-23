@@ -11,6 +11,39 @@
     "application/json"
   ],
   "paths": {
+    "/v1/user/account/charge": {
+      "put": {
+        "summary": "用户账户充值",
+        "operationId": "UsersService_UserAccountCharge",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/usersUserAccountChargeResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/usersUserAccountChargeRequest"
+            }
+          }
+        ],
+        "tags": [
+          "UsersService"
+        ]
+      }
+    },
     "/v1/user/exist/phone": {
       "get": {
         "summary": "检查用户是否注册-手机号",
@@ -593,6 +626,15 @@
         }
       }
     },
+    "usersAccountType": {
+      "type": "string",
+      "enum": [
+        "PERSONAL",
+        "COMPANY",
+        "SYSTEM"
+      ],
+      "default": "PERSONAL"
+    },
     "usersCheckUserByPhoneResponse": {
       "type": "object",
       "properties": {
@@ -612,6 +654,14 @@
           "$ref": "#/definitions/usersCommonResponse"
         }
       }
+    },
+    "usersCoinType": {
+      "type": "string",
+      "enum": [
+        "CNY",
+        "USD"
+      ],
+      "default": "CNY"
     },
     "usersCommonResponse": {
       "type": "object",
@@ -950,6 +1000,24 @@
         }
       }
     },
+    "usersOperationMeta": {
+      "type": "object",
+      "properties": {
+        "op_uid": {
+          "type": "string",
+          "format": "int64"
+        },
+        "op_ip": {
+          "type": "string"
+        },
+        "op_platform": {
+          "type": "string"
+        },
+        "op_device": {
+          "type": "string"
+        }
+      }
+    },
     "usersOperationType": {
       "type": "string",
       "enum": [
@@ -1056,7 +1124,9 @@
         "USER_LOGIN_NOT_ALLOW",
         "USER_DELIVERY_INFO_EXIST",
         "USER_DELIVERY_INFO_NOT_EXIST",
-        "TRANSACTION_FAILED"
+        "TRANSACTION_FAILED",
+        "ACCOUNT_LOCK",
+        "ACCOUNT_INVALID"
       ],
       "default": "SUCCESS"
     },
@@ -1073,6 +1143,38 @@
       }
     },
     "usersUpdateUserLoginStateResponse": {
+      "type": "object",
+      "properties": {
+        "common": {
+          "$ref": "#/definitions/usersCommonResponse"
+        }
+      }
+    },
+    "usersUserAccountChargeRequest": {
+      "type": "object",
+      "properties": {
+        "uid_list": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "int64"
+          }
+        },
+        "account_type": {
+          "$ref": "#/definitions/usersAccountType"
+        },
+        "coin_type": {
+          "$ref": "#/definitions/usersCoinType"
+        },
+        "amount": {
+          "type": "string"
+        },
+        "op_meta": {
+          "$ref": "#/definitions/usersOperationMeta"
+        }
+      }
+    },
+    "usersUserAccountChargeResponse": {
       "type": "object",
       "properties": {
         "common": {

@@ -9,6 +9,7 @@ import (
 	"gitee.com/cristiane/micro-mall-users/pkg/code"
 	"gitee.com/cristiane/micro-mall-users/pkg/util"
 	"gitee.com/cristiane/micro-mall-users/pkg/util/cache"
+	"gitee.com/cristiane/micro-mall-users/proto/micro_mall_pay_proto/pay_business"
 	"gitee.com/cristiane/micro-mall-users/proto/micro_mall_users_proto/users"
 	"gitee.com/cristiane/micro-mall-users/repository"
 	"gitee.com/cristiane/micro-mall-users/vars"
@@ -381,4 +382,100 @@ func GetUserDeliveryInfo(ctx context.Context, req *users.GetUserDeliveryInfoRequ
 		result = append(result, info)
 	}
 	return result, code.Success
+}
+
+const (
+	sqlSelectFindUserInfoMain = "id,user_name,country_code,phone,age,contact_addr"
+)
+
+func FindUserInfo(ctx context.Context, req *users.FindUserInfoRequest) (result []*users.UserInfoMain, retCode int) {
+	result = make([]*users.UserInfoMain, 0)
+	retCode = code.Success
+	userInfoList, err := repository.FindUserInfo(sqlSelectFindUserInfoMain, req.GetUidList())
+	if err != nil {
+		kelvins.ErrLogger.Errorf(ctx, "FindUserInfo err: %v, uidList: %+v", err, req.GetUidList())
+		retCode = code.ErrorServer
+		return
+	}
+	if len(userInfoList) == 0 {
+		return
+	}
+	result = make([]*users.UserInfoMain, len(userInfoList))
+	for i := 0; i < len(userInfoList); i++ {
+		userInfoMain := &users.UserInfoMain{
+			Uid:         int64(userInfoList[i].Id),
+			Name:        userInfoList[i].UserName,
+			CountryCode: userInfoList[i].CountryCode,
+			Phone:       userInfoList[i].Phone,
+			Age:         int32(userInfoList[i].Age),
+			Address:     userInfoList[i].ContactAddr,
+		}
+		result[i] = userInfoMain
+	}
+
+	return
+}
+
+func UserAccountCharge(ctx context.Context, req *users.UserAccountChargeRequest) (retCode int) {
+	retCode = code.Success
+	userInfoList, err := repository.FindUserInfo("id,account_id", req.UidList)
+	if err != nil {
+		kelvins.ErrLogger.Errorf(ctx, "FindUserInfo err: %v, uidList: %+v", err, req.GetUidList())
+		retCode = code.ErrorServer
+		return
+	}
+	if len(userInfoList) == 0 {
+		retCode = code.UserNotExist
+		return
+	}
+	if len(userInfoList) != len(req.GetUidList()) {
+		retCode = code.UserNotExist
+		return
+	}
+	accountIdList := make([]string, 0)
+	for i := 0; i < len(userInfoList); i++ {
+		accountIdList = append(accountIdList, userInfoList[i].AccountId)
+	}
+	serverName := args.RpcServiceMicroMallPay
+	conn, err := util.GetGrpcClient(serverName)
+	if err != nil {
+		kelvins.ErrLogger.Errorf(ctx, "GetGrpcClient %v,err: %v", serverName, err)
+		return code.ErrorServer
+	}
+	defer conn.Close()
+	payClient := pay_business.NewPayBusinessServiceClient(conn)
+	payReq := &pay_business.AccountChargeRequest{
+		Owner:       accountIdList,
+		AccountType: pay_business.AccountType(req.AccountType),
+		CoinType:    pay_business.CoinType(req.CoinType),
+		Amount:      req.Amount,
+		OpMeta: &pay_business.OperationMeta{
+			OpUid:      req.OpMeta.OpUid,
+			OpIp:       req.OpMeta.OpIp,
+			OpPlatform: req.OpMeta.OpPlatform,
+			OpDevice:   req.OpMeta.OpDevice,
+		},
+	}
+	payRsp, err := payClient.AccountCharge(ctx, payReq)
+	if err != nil {
+		kelvins.ErrLogger.Errorf(ctx, "AccountCharge %v,err: %v", serverName, err)
+		return code.ErrorServer
+	}
+	if payRsp.Common.Code != pay_business.RetCode_SUCCESS {
+		kelvins.ErrLogger.Errorf(ctx, "AccountCharge  %v,err: %v, req: %+v, rsp: %+v", serverName, err, payReq, payRsp)
+		switch payRsp.Common.Code {
+		case pay_business.RetCode_USER_ACCOUNT_NOT_EXIST:
+			retCode = code.AccountNotExist
+		case pay_business.RetCode_TRANSACTION_FAILED:
+			retCode = code.TransactionFailed
+		case pay_business.RetCode_USER_ACCOUNT_STATE_INVALID:
+			retCode = code.AccountStateInvalid
+		case pay_business.RetCode_USER_ACCOUNT_STATE_LOCK:
+			retCode = code.AccountStateLock
+		default:
+			retCode = code.ErrorServer
+		}
+		return
+	}
+	return
 }
