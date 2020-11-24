@@ -286,6 +286,7 @@ func ModifyUserDeliveryInfo(ctx context.Context, req *users.ModifyUserDeliveryIn
 		deliveryInfo := &mysql.UserLogisticsDelivery{
 			Uid:          req.Uid,
 			DeliveryUser: req.Info.DeliveryUser,
+			CountryCode:  "86",
 			Phone:        req.Info.MobilePhone,
 			Area:         req.Info.Area,
 			AreaDetailed: req.Info.DetailedArea,
@@ -293,6 +294,54 @@ func ModifyUserDeliveryInfo(ctx context.Context, req *users.ModifyUserDeliveryIn
 			IsDefault:    int(req.Info.IsDefault),
 			CreateTime:   time.Now(),
 			UpdateTime:   time.Now(),
+		}
+		if req.Info.IsDefault == users.IsDefaultType_DEFAULT_TYPE_TRUE {
+			tx := kelvins.XORM_DBEngine.NewSession()
+			err := tx.Begin()
+			if err != nil {
+				kelvins.ErrLogger.Errorf(ctx, "ModifyUserDeliveryInfo create Begin err: %v", err)
+				return code.ErrorServer
+			}
+			where := map[string]interface{}{
+				"uid":        req.Uid,
+				"is_default": 1,
+			}
+			maps := map[string]interface{}{
+				"is_default":  0,
+				"update_time": time.Now(),
+			}
+			rowAffected, err := repository.UpdateUserLogisticsDeliveryByTx(tx, where, maps)
+			if err != nil {
+				errCallback := tx.Rollback()
+				if errCallback != nil {
+					kelvins.ErrLogger.Errorf(ctx, "UpdateUserLogisticsDeliveryByTx Rollback err:%v", errCallback)
+				}
+				kelvins.ErrLogger.Errorf(ctx, "UpdateUserLogisticsDeliveryByTx err: %v, where: %v", err, where)
+				return code.ErrorServer
+			}
+			if rowAffected <= 0 {
+				// 用户第一次添加除外
+				//errCallback := tx.Rollback()
+				//if errCallback != nil {
+				//	kelvins.ErrLogger.Errorf(ctx,"UpdateUserLogisticsDeliveryByTx rowAffected Rollback err:%v",errCallback)
+				//}
+				//return code.TransactionFailed
+			}
+			err = repository.CreateUserLogisticsDeliveryByTx(tx, deliveryInfo)
+			if err != nil {
+				errCallback := tx.Rollback()
+				if errCallback != nil {
+					kelvins.ErrLogger.Errorf(ctx, "CreateUserLogisticsDeliveryByTx Rollback err:%v", errCallback)
+				}
+				kelvins.ErrLogger.Errorf(ctx, "CreateUserLogisticsDeliveryByTx err: %v, deliveryInfo: %v", err, deliveryInfo)
+				return code.ErrorServer
+			}
+			err = tx.Commit()
+			if err != nil {
+				kelvins.ErrLogger.Errorf(ctx, "ModifyUserDeliveryInfo create Commit err: %v", err)
+				return code.ErrorServer
+			}
+			return code.Success
 		}
 		err := repository.CreateUserLogisticsDelivery(deliveryInfo)
 		if err != nil {
@@ -304,12 +353,12 @@ func ModifyUserDeliveryInfo(ctx context.Context, req *users.ModifyUserDeliveryIn
 		if req.Info.Id <= 0 {
 			return code.UserDeliveryInfoNotExist
 		}
-		deliveryInfoDB, err := repository.GetUserLogisticsDelivery(sqlSelectUserDeliveryInfo, req.Uid, req.Info.Id)
+		deliveryInfoDB, err := repository.GetUserLogisticsDelivery("id", req.Info.Id)
 		if err != nil {
 			kelvins.ErrLogger.Errorf(ctx, "GetUserLogisticsDelivery err: %v, id: %v", err, req.Info.Id)
 			return code.ErrorServer
 		}
-		if deliveryInfoDB.Id <= 0 || deliveryInfoDB.Uid <= 0 {
+		if deliveryInfoDB.Id <= 0 {
 			return code.UserDeliveryInfoNotExist
 		}
 		deliveryInfo := &mysql.UserLogisticsDelivery{
@@ -320,6 +369,60 @@ func ModifyUserDeliveryInfo(ctx context.Context, req *users.ModifyUserDeliveryIn
 			Label:        strings.Join(req.Info.Label, "|"),
 			IsDefault:    int(req.Info.IsDefault),
 			UpdateTime:   time.Now(),
+		}
+		if req.Info.IsDefault == users.IsDefaultType_DEFAULT_TYPE_TRUE {
+			tx := kelvins.XORM_DBEngine.NewSession()
+			err := tx.Begin()
+			if err != nil {
+				kelvins.ErrLogger.Errorf(ctx, "ModifyUserDeliveryInfo create Begin err: %v", err)
+				return code.ErrorServer
+			}
+			where := map[string]interface{}{
+				"uid":        req.Uid,
+				"is_default": 1,
+			}
+			maps := map[string]interface{}{
+				"is_default":  0,
+				"update_time": time.Now(),
+			}
+			rowAffected, err := repository.UpdateUserLogisticsDeliveryByTx(tx, where, maps)
+			if err != nil {
+				errCallback := tx.Rollback()
+				if errCallback != nil {
+					kelvins.ErrLogger.Errorf(ctx, "UpdateUserLogisticsDeliveryByTx Rollback err:%v", errCallback)
+				}
+				kelvins.ErrLogger.Errorf(ctx, "UpdateUserLogisticsDeliveryByTx err: %v, where: %v", err, where)
+				return code.ErrorServer
+			}
+			if rowAffected <= 0 {
+				// 用户第一次添加除外
+				//errCallback := tx.Rollback()
+				//if errCallback != nil {
+				//	kelvins.ErrLogger.Errorf(ctx,"UpdateUserLogisticsDeliveryByTx rowAffected Rollback err:%v",errCallback)
+				//}
+				//return code.TransactionFailed
+			}
+			where2 := map[string]interface{}{
+				"id": req.Info.Id,
+			}
+			rowsAffected, err := repository.UpdateUserLogisticsDeliveryByTx(tx, where2, deliveryInfo)
+			if err != nil {
+				kelvins.ErrLogger.Errorf(ctx, "UpdateUserLogisticsDeliveryByTx err: %v,id: %v, deliveryInfo: %v", err, req.Info.Id, deliveryInfo)
+				return code.ErrorServer
+			}
+			if rowsAffected != 1 {
+				errCallback := tx.Rollback()
+				if errCallback != nil {
+					kelvins.ErrLogger.Errorf(ctx, "UpdateUserLogisticsDeliveryByTx rowAffected Rollback err:%v", errCallback)
+				}
+				return code.TransactionFailed
+			}
+			err = tx.Commit()
+			if err != nil {
+				kelvins.ErrLogger.Errorf(ctx, "ModifyUserDeliveryInfo create Commit err: %v", err)
+				return code.ErrorServer
+			}
+			return code.Success
 		}
 		where := map[string]interface{}{
 			"id": req.Info.Id,
@@ -365,7 +468,7 @@ func GetUserDeliveryInfo(ctx context.Context, req *users.GetUserDeliveryInfoRequ
 			result[i] = info
 		}
 	} else {
-		infoDB, err := repository.GetUserLogisticsDelivery(sqlSelectUserDeliveryInfo, req.Uid, int64(req.UserDeliveryId))
+		infoDB, err := repository.GetUserLogisticsDelivery(sqlSelectUserDeliveryInfo, int64(req.UserDeliveryId))
 		if err != nil {
 			kelvins.ErrLogger.Errorf(ctx, "GetUserLogisticsDelivery err: %v, uid: %v,id: %v", err, req.Uid, req.UserDeliveryId)
 			return result, code.ErrorServer

@@ -17,7 +17,7 @@ type UserLogisticsDelivery struct {
 	Id           int64     `xorm:"pk autoincr comment('自增ID') BIGINT"`
 	Uid          int64     `xorm:"comment('用户ID') index BIGINT"`
 	DeliveryUser string    `xorm:"comment('交付人') VARCHAR(512)"`
-	CountryCode  string    `xorm:"default '86' comment('区号') VARCHAR(10)"`
+	CountryCode  string    `xorm:"not null default '86' comment('区号') VARCHAR(10)"`
 	Phone        string    `xorm:"comment('手机号') VARCHAR(255)"`
 	Area         string    `xorm:"comment('交付区域') VARCHAR(255)"`
 	AreaDetailed string    `xorm:"comment('详细地址') TEXT"`
