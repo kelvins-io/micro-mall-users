@@ -5,6 +5,7 @@ import (
 	"gitee.com/kelvins-io/kelvins/config/setting"
 	"github.com/gomodule/redigo/redis"
 	"github.com/jinzhu/gorm"
+	"github.com/qiniu/qmgo"
 	"xorm.io/xorm"
 )
 
@@ -16,6 +17,9 @@ var GORM_DBEngine *gorm.DB
 
 // XORM_DBEngine is a global vars for mysql connect.
 var XORM_DBEngine xorm.EngineInterface
+
+// FrameworkLogger is a global var for Framework log
+var FrameworkLogger log.LoggerContextIface
 
 // ErrLogger is a global vars for application to log err msg.
 var ErrLogger log.LoggerContextIface
@@ -46,3 +50,15 @@ var QueueServerSetting *setting.QueueServerSettingS
 
 // QueueAliAMQPSetting maps config section "kelvinsQueueAliAMQP.*" from apollo.
 var QueueAliAMQPSetting *setting.QueueAliAMQPSettingS
+
+// AliRocketMQSetting
+var AliRocketMQSetting *setting.AliRocketMQSettingS
+
+// QueueAMQPSetting maps config section
+var QueueAMQPSetting *setting.QueueAMQPSettingS
+
+// MongoDBSetting maps config section mongodb.
+var MongoDBSetting *setting.MongoDBSettingS
+
+// MongoDBClient is qmgo-client for mongodb.
+var MongoDBClient *qmgo.QmgoClient

@@ -21,7 +21,6 @@ import (
 )
 
 // OnsInstanceInServiceList invokes the ons.OnsInstanceInServiceList API synchronously
-// api document: https://help.aliyun.com/api/ons/onsinstanceinservicelist.html
 func (client *Client) OnsInstanceInServiceList(request *OnsInstanceInServiceListRequest) (response *OnsInstanceInServiceListResponse, err error) {
 	response = CreateOnsInstanceInServiceListResponse()
 	err = client.DoAction(request, response)
@@ -29,8 +28,6 @@ func (client *Client) OnsInstanceInServiceList(request *OnsInstanceInServiceList
 }
 
 // OnsInstanceInServiceListWithChan invokes the ons.OnsInstanceInServiceList API asynchronously
-// api document: https://help.aliyun.com/api/ons/onsinstanceinservicelist.html
-// asynchronous document: https://help.aliyun.com/document_detail/66220.html
 func (client *Client) OnsInstanceInServiceListWithChan(request *OnsInstanceInServiceListRequest) (<-chan *OnsInstanceInServiceListResponse, <-chan error) {
 	responseChan := make(chan *OnsInstanceInServiceListResponse, 1)
 	errChan := make(chan error, 1)
@@ -53,8 +50,6 @@ func (client *Client) OnsInstanceInServiceListWithChan(request *OnsInstanceInSer
 }
 
 // OnsInstanceInServiceListWithCallback invokes the ons.OnsInstanceInServiceList API asynchronously
-// api document: https://help.aliyun.com/api/ons/onsinstanceinservicelist.html
-// asynchronous document: https://help.aliyun.com/document_detail/66220.html
 func (client *Client) OnsInstanceInServiceListWithCallback(request *OnsInstanceInServiceListRequest, callback func(response *OnsInstanceInServiceListResponse, err error)) <-chan int {
 	result := make(chan int, 1)
 	err := client.AddAsyncTask(func() {
@@ -76,6 +71,13 @@ func (client *Client) OnsInstanceInServiceListWithCallback(request *OnsInstanceI
 // OnsInstanceInServiceListRequest is the request struct for api OnsInstanceInServiceList
 type OnsInstanceInServiceListRequest struct {
 	*requests.RpcRequest
+	Tag *[]OnsInstanceInServiceListTag `position:"Query" name:"Tag"  type:"Repeated"`
+}
+
+// OnsInstanceInServiceListTag is a repeated param struct in OnsInstanceInServiceListRequest
+type OnsInstanceInServiceListTag struct {
+	Value string `name:"Value"`
+	Key   string `name:"Key"`
 }
 
 // OnsInstanceInServiceListResponse is the response struct for api OnsInstanceInServiceList
@@ -91,7 +93,8 @@ func CreateOnsInstanceInServiceListRequest() (request *OnsInstanceInServiceListR
 	request = &OnsInstanceInServiceListRequest{
 		RpcRequest: &requests.RpcRequest{},
 	}
-	request.InitWithApiInfo("Ons", "2019-02-14", "OnsInstanceInServiceList", "ons", "openAPI")
+	request.InitWithApiInfo("Ons", "2019-02-14", "OnsInstanceInServiceList", "", "")
+	request.Method = requests.POST
 	return
 }
 

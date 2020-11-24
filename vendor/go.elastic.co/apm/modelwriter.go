@@ -109,11 +109,15 @@ func (w *modelWriter) buildModelTransaction(out *model.Transaction, tx *Transact
 	if !sampled {
 		out.Sampled = &notSampled
 	}
+	if tx.traceContext.State.haveSampleRate {
+		out.SampleRate = &tx.traceContext.State.sampleRate
+	}
 
 	out.ParentID = model.SpanID(td.parentSpan)
 	out.Name = truncateString(td.Name)
 	out.Type = truncateString(td.Type)
 	out.Result = truncateString(td.Result)
+	out.Outcome = normalizeOutcome(td.Outcome)
 	out.Timestamp = model.Time(td.timestamp.UTC())
 	out.Duration = td.Duration.Seconds() * 1000
 	out.SpanCount.Started = td.spansCreated
@@ -137,6 +141,9 @@ func (w *modelWriter) buildModelSpan(out *model.Span, span *Span, sd *SpanData) 
 	out.ID = model.SpanID(span.traceContext.Span)
 	out.TraceID = model.TraceID(span.traceContext.Trace)
 	out.TransactionID = model.SpanID(span.transactionID)
+	if span.traceContext.State.haveSampleRate {
+		out.SampleRate = &span.traceContext.State.sampleRate
+	}
 
 	out.ParentID = model.SpanID(sd.parentID)
 	out.Name = truncateString(sd.Name)
@@ -145,6 +152,7 @@ func (w *modelWriter) buildModelSpan(out *model.Span, span *Span, sd *SpanData) 
 	out.Action = truncateString(sd.Action)
 	out.Timestamp = model.Time(sd.timestamp.UTC())
 	out.Duration = sd.Duration.Seconds() * 1000
+	out.Outcome = normalizeOutcome(sd.Outcome)
 	out.Context = sd.Context.build()
 
 	// Copy the span type to context.destination.service.type.
@@ -263,5 +271,14 @@ func (w *modelWriter) setStacktraceContext(stack []model.StacktraceFrame) {
 			w.cfg.logger.Debugf("setting context failed: %v", err)
 		}
 		w.stats.Errors.SetContext++
+	}
+}
+
+func normalizeOutcome(outcome string) string {
+	switch outcome {
+	case "success", "failure", "unknown":
+		return outcome
+	default:
+		return "unknown"
 	}
 }

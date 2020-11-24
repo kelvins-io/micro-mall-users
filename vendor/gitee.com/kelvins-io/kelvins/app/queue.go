@@ -5,11 +5,11 @@ import (
 	"flag"
 	"fmt"
 	"gitee.com/kelvins-io/common/convert"
+	"gitee.com/kelvins-io/common/event"
 	"gitee.com/kelvins-io/common/log"
 	"gitee.com/kelvins-io/kelvins"
 	"gitee.com/kelvins-io/kelvins/internal/config"
 	"gitee.com/kelvins-io/kelvins/internal/logging"
-
 	"gitee.com/kelvins-io/kelvins/setup"
 	queue_log "github.com/RichardKnop/machinery/v1/log"
 	"time"
@@ -69,7 +69,26 @@ func runQueue(queueApp *kelvins.QueueApplication) error {
 	// 5. start server
 	errorsChan := make(chan error)
 
-	logging.Infof("Start queue consume")
+	// 6. event server
+	if queueApp.EventServer != nil {
+		logging.Infof("Start event server consume")
+		// subscribe event
+		if queueApp.RegisterEventHandler != nil {
+			err := queueApp.RegisterEventHandler(queueApp.EventServer)
+			if err != nil {
+				return err
+			}
+		}
+		// start event server
+		err = queueApp.EventServer.Start()
+		if err != nil {
+			return err
+		}
+		logging.Info("Start event server")
+	}
+
+	// 7. queue server
+	logging.Infof("Start queue server consume")
 	concurrency := len(queueApp.GetNamedTaskFuncs())
 	if kelvins.QueueServerSetting != nil {
 		concurrency = kelvins.QueueServerSetting.WorkerConcurrency
@@ -119,11 +138,41 @@ func setupQueueVars(queueApp *kelvins.QueueApplication) error {
 		}
 		return nil
 	}
+	if kelvins.QueueAMQPSetting != nil && kelvins.QueueAMQPSetting.Broker != "" {
+		queueApp.QueueServer, err = setup.NewAMQPQueue(kelvins.QueueAMQPSetting, queueApp.GetNamedTaskFuncs())
+		if err != nil {
+			return err
+		}
+		return nil
+	}
 	if kelvins.QueueAliAMQPSetting != nil && kelvins.QueueAliAMQPSetting.VHost != "" {
 		queueApp.QueueServer, err = setup.NewAliAMQPQueue(kelvins.QueueAliAMQPSetting, queueApp.GetNamedTaskFuncs())
 		if err != nil {
 			return err
 		}
+		return nil
+	}
+	// init event server
+	if kelvins.AliRocketMQSetting != nil && kelvins.AliRocketMQSetting.InstanceId != "" {
+		logger, err := log.GetBusinessLogger("event")
+		if err != nil {
+			return err
+		}
+
+		// new event server
+		eventServer, err := event.NewEventServer(&event.Config{
+			BusinessName: kelvins.AliRocketMQSetting.BusinessName,
+			RegionId:     kelvins.AliRocketMQSetting.RegionId,
+			AccessKey:    kelvins.AliRocketMQSetting.AccessKey,
+			SecretKey:    kelvins.AliRocketMQSetting.SecretKey,
+			InstanceId:   kelvins.AliRocketMQSetting.InstanceId,
+			HttpEndpoint: kelvins.AliRocketMQSetting.HttpEndpoint,
+		}, logger)
+		if err != nil {
+			return err
+		}
+
+		queueApp.EventServer = eventServer
 		return nil
 	}
 

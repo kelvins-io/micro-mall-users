@@ -46,6 +46,7 @@ const (
 	envEnvironment                 = "ELASTIC_APM_ENVIRONMENT"
 	envSpanFramesMinDuration       = "ELASTIC_APM_SPAN_FRAMES_MIN_DURATION"
 	envActive                      = "ELASTIC_APM_ACTIVE"
+	envRecording                   = "ELASTIC_APM_RECORDING"
 	envAPIRequestSize              = "ELASTIC_APM_API_REQUEST_SIZE"
 	envAPIRequestTime              = "ELASTIC_APM_API_REQUEST_TIME"
 	envAPIBufferSize               = "ELASTIC_APM_API_BUFFER_SIZE"
@@ -56,6 +57,7 @@ const (
 	envCentralConfig               = "ELASTIC_APM_CENTRAL_CONFIG"
 	envBreakdownMetrics            = "ELASTIC_APM_BREAKDOWN_METRICS"
 	envUseElasticTraceparentHeader = "ELASTIC_APM_USE_ELASTIC_TRACEPARENT_HEADER"
+	envCloudProvider               = "ELASTIC_APM_CLOUD_PROVIDER"
 
 	// NOTE(axw) profiling environment variables are experimental.
 	// They may be removed in a future minor version without being
@@ -252,6 +254,10 @@ func initialActive() (bool, error) {
 	return configutil.ParseBoolEnv(envActive, true)
 }
 
+func initialRecording() (bool, error) {
+	return configutil.ParseBoolEnv(envRecording, true)
+}
+
 func initialDisabledMetrics() wildcard.Matchers {
 	return configutil.ParseWildcardPatternsEnv(envDisableMetrics, nil)
 }
@@ -341,6 +347,39 @@ func (t *Tracer) updateRemoteConfig(logger WarningLogger, old, attrs map[string]
 					cfg.maxSpans = value
 				})
 			}
+		case envRecording:
+			recording, err := strconv.ParseBool(v)
+			if err != nil {
+				errorf("central config failure: failed to parse %s: %s", k, err)
+				delete(attrs, k)
+				continue
+			} else {
+				updates = append(updates, func(cfg *instrumentationConfig) {
+					cfg.recording = recording
+				})
+			}
+		case envSpanFramesMinDuration:
+			duration, err := configutil.ParseDuration(v)
+			if err != nil {
+				errorf("central config failure: failed to parse %s: %s", k, err)
+				delete(attrs, k)
+				continue
+			} else {
+				updates = append(updates, func(cfg *instrumentationConfig) {
+					cfg.spanFramesMinDuration = duration
+				})
+			}
+		case envStackTraceLimit:
+			limit, err := strconv.Atoi(v)
+			if err != nil {
+				errorf("central config failure: failed to parse %s: %s", k, err)
+				delete(attrs, k)
+				continue
+			} else {
+				updates = append(updates, func(cfg *instrumentationConfig) {
+					cfg.stackTraceLimit = limit
+				})
+			}
 		case envTransactionSampleRate:
 			sampler, err := parseSampleRate(k, v)
 			if err != nil {
@@ -350,6 +389,7 @@ func (t *Tracer) updateRemoteConfig(logger WarningLogger, old, attrs map[string]
 			} else {
 				updates = append(updates, func(cfg *instrumentationConfig) {
 					cfg.sampler = sampler
+					cfg.extendedSampler, _ = sampler.(ExtendedSampler)
 				})
 			}
 		default:
@@ -438,8 +478,10 @@ type instrumentationConfig struct {
 // set the initial entry in instrumentationConfig.local, in order to properly reset
 // to the local value, even if the default is the zero value.
 type instrumentationConfigValues struct {
+	recording             bool
 	captureBody           CaptureBodyMode
 	captureHeaders        bool
+	extendedSampler       ExtendedSampler
 	maxSpans              int
 	sampler               Sampler
 	spanFramesMinDuration time.Duration

@@ -18,6 +18,18 @@ const (
 	SectionMysql = "kelvins-mysql"
 	// SectionRedis is a section name for redis.
 	SectionRedis = "kelvins-redis"
+	// SectionMongodb is a section name for mongodb
+	SectionMongoDB = "kelvins-mongodb"
+	// SectionQueueRedis is a section name for redis queue
+	SectionQueueRedis = "kelvins-queue-redis"
+	// SectionQueueAliAMQP is a section name for aliamqp
+	SectionQueueAliAMQP = "kelvins-queue-ali-amqp"
+	// SectionQueueAMQP is a section name for amqp
+	SectionQueueAMQP = "kelvins-queue-amqp"
+	// SectionQueueAliRocketMQ is a section name for ali-rocketmq
+	SectionQueueAliRocketMQ = "kelvins-queue-ali-rocketmq"
+	// SectionQueueServer is a section name for queue-server
+	SectionQueueServer = "kelvins-queue-server"
 )
 
 // cfg reads file app.ini.
@@ -58,6 +70,42 @@ func LoadDefaultConfig(application *kelvins.Application) error {
 			log.Printf("[info] Load default config %s", sectionName)
 			kelvins.RedisSetting = new(setting.RedisSettingS)
 			MapConfig(sectionName, kelvins.RedisSetting)
+			continue
+		}
+		if sectionName == SectionMongoDB {
+			log.Printf("[info] Load default config %s", sectionName)
+			kelvins.MongoDBSetting = new(setting.MongoDBSettingS)
+			MapConfig(sectionName, kelvins.MongoDBSetting)
+			continue
+		}
+		if sectionName == SectionQueueRedis {
+			log.Printf("[info] Load default config %s", sectionName)
+			kelvins.QueueRedisSetting = new(setting.QueueRedisSettingS)
+			MapConfig(sectionName, kelvins.QueueRedisSetting)
+			continue
+		}
+		if sectionName == SectionQueueAliAMQP {
+			log.Printf("[info] Load default config %s", sectionName)
+			kelvins.QueueAliAMQPSetting = new(setting.QueueAliAMQPSettingS)
+			MapConfig(sectionName, kelvins.QueueAliAMQPSetting)
+			continue
+		}
+		if sectionName == SectionQueueAMQP {
+			log.Printf("[info] Load default config %s", sectionName)
+			kelvins.QueueAMQPSetting = new(setting.QueueAMQPSettingS)
+			MapConfig(sectionName, kelvins.QueueAMQPSetting)
+			continue
+		}
+		if sectionName == SectionQueueAliRocketMQ {
+			log.Printf("[info] Load default config %s", sectionName)
+			kelvins.AliRocketMQSetting = new(setting.AliRocketMQSettingS)
+			MapConfig(sectionName, kelvins.AliRocketMQSetting)
+			continue
+		}
+		if sectionName == SectionQueueServer {
+			log.Printf("[info] Load default config %s", sectionName)
+			kelvins.QueueServerSetting = new(setting.QueueServerSettingS)
+			MapConfig(sectionName, kelvins.QueueServerSetting)
 			continue
 		}
 	}

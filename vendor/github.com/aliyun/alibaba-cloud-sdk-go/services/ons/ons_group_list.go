@@ -21,7 +21,6 @@ import (
 )
 
 // OnsGroupList invokes the ons.OnsGroupList API synchronously
-// api document: https://help.aliyun.com/api/ons/onsgrouplist.html
 func (client *Client) OnsGroupList(request *OnsGroupListRequest) (response *OnsGroupListResponse, err error) {
 	response = CreateOnsGroupListResponse()
 	err = client.DoAction(request, response)
@@ -29,8 +28,6 @@ func (client *Client) OnsGroupList(request *OnsGroupListRequest) (response *OnsG
 }
 
 // OnsGroupListWithChan invokes the ons.OnsGroupList API asynchronously
-// api document: https://help.aliyun.com/api/ons/onsgrouplist.html
-// asynchronous document: https://help.aliyun.com/document_detail/66220.html
 func (client *Client) OnsGroupListWithChan(request *OnsGroupListRequest) (<-chan *OnsGroupListResponse, <-chan error) {
 	responseChan := make(chan *OnsGroupListResponse, 1)
 	errChan := make(chan error, 1)
@@ -53,8 +50,6 @@ func (client *Client) OnsGroupListWithChan(request *OnsGroupListRequest) (<-chan
 }
 
 // OnsGroupListWithCallback invokes the ons.OnsGroupList API asynchronously
-// api document: https://help.aliyun.com/api/ons/onsgrouplist.html
-// asynchronous document: https://help.aliyun.com/document_detail/66220.html
 func (client *Client) OnsGroupListWithCallback(request *OnsGroupListRequest, callback func(response *OnsGroupListResponse, err error)) <-chan int {
 	result := make(chan int, 1)
 	err := client.AddAsyncTask(func() {
@@ -76,8 +71,16 @@ func (client *Client) OnsGroupListWithCallback(request *OnsGroupListRequest, cal
 // OnsGroupListRequest is the request struct for api OnsGroupList
 type OnsGroupListRequest struct {
 	*requests.RpcRequest
-	GroupId    string `position:"Query" name:"GroupId"`
-	InstanceId string `position:"Query" name:"InstanceId"`
+	GroupId    string             `position:"Query" name:"GroupId"`
+	InstanceId string             `position:"Query" name:"InstanceId"`
+	GroupType  string             `position:"Query" name:"GroupType"`
+	Tag        *[]OnsGroupListTag `position:"Query" name:"Tag"  type:"Repeated"`
+}
+
+// OnsGroupListTag is a repeated param struct in OnsGroupListRequest
+type OnsGroupListTag struct {
+	Value string `name:"Value"`
+	Key   string `name:"Key"`
 }
 
 // OnsGroupListResponse is the response struct for api OnsGroupList
@@ -93,7 +96,8 @@ func CreateOnsGroupListRequest() (request *OnsGroupListRequest) {
 	request = &OnsGroupListRequest{
 		RpcRequest: &requests.RpcRequest{},
 	}
-	request.InitWithApiInfo("Ons", "2019-02-14", "OnsGroupList", "ons", "openAPI")
+	request.InitWithApiInfo("Ons", "2019-02-14", "OnsGroupList", "", "")
+	request.Method = requests.POST
 	return
 }
 
