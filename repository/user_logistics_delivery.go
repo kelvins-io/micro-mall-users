@@ -16,6 +16,12 @@ func CreateUserLogisticsDeliveryByTx(tx *xorm.Session, model *mysql.UserLogistic
 	return err
 }
 
+func CheckUserLogisticsDelivery(uid int64, ids []int32) ([]mysql.UserLogisticsDelivery, error) {
+	var result = make([]mysql.UserLogisticsDelivery, 0)
+	err := kelvins.XORM_DBEngine.Table(mysql.TableUserLogisticsDelivery).Select("id").Where("uid = ?", uid).In("id", ids).Find(&result)
+	return result, err
+}
+
 func GetUserLogisticsDelivery(sqlSelect string, id int64) (*mysql.UserLogisticsDelivery, error) {
 	var model mysql.UserLogisticsDelivery
 	_, err := kelvins.XORM_DBEngine.Table(mysql.TableUserLogisticsDelivery).Select(sqlSelect).Where("id = ?", id).Get(&model)

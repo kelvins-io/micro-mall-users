@@ -582,3 +582,78 @@ func UserAccountCharge(ctx context.Context, req *users.UserAccountChargeRequest)
 	}
 	return
 }
+
+func CheckUserDeliveryInfo(ctx context.Context, req *users.CheckUserDeliveryInfoRequest) (retCode int) {
+	retCode = code.Success
+	infoList, err := repository.CheckUserLogisticsDelivery(req.Uid, req.DeliveryIds)
+	if err != nil {
+		kelvins.ErrLogger.Errorf(ctx, "AccountCharge err: %v, req: %+v", err, req)
+		retCode = code.ErrorServer
+		return
+	}
+	if len(infoList) != len(req.DeliveryIds) {
+		retCode = code.UserDeliveryInfoNotExist
+		return
+	}
+	return
+}
+
+func CheckUserState(ctx context.Context, req *users.CheckUserStateRequest) (retCode int) {
+	retCode = code.Success
+	infoList, err := repository.FindUserInfo("id,state", req.GetUidList())
+	if err != nil {
+		kelvins.ErrLogger.Errorf(ctx, "AccountCharge err: %v, req: %+v", err, req)
+		retCode = code.ErrorServer
+		return
+	}
+	if len(infoList) == 0 {
+		retCode = code.UserNotExist
+		return
+	}
+	if len(infoList) != len(req.GetUidList()) {
+		retCode = code.UserNotExist
+		return
+	}
+	for i := 0; i < len(infoList); i++ {
+		if infoList[i].Id <= 0 {
+			retCode = code.UserNotExist
+			return
+		}
+		if infoList[i].State != 3 {
+			retCode = code.UserNotExist
+			return
+		}
+	}
+	return
+}
+
+func GetUserAccountId(ctx context.Context, req *users.GetUserAccountIdRequest) (result []*users.UserAccountInfo, retCode int) {
+	retCode = code.Success
+	userList, err := repository.FindUserInfo("id,account_id", req.GetUidList())
+	result = make([]*users.UserAccountInfo, len(userList))
+	if err != nil {
+		kelvins.ErrLogger.Errorf(ctx, "FindUserInfo err: %v, req: %+v", err, req)
+		retCode = code.ErrorServer
+		return
+	}
+	if len(userList) == 0 {
+		retCode = code.UserNotExist
+		return
+	}
+	if len(userList) != len(req.GetUidList()) {
+		retCode = code.UserNotExist
+		return
+	}
+	for i := 0; i < len(userList); i++ {
+		if userList[i].Id < 0 || userList[i].AccountId == "" {
+			retCode = code.UserNotExist
+			return
+		}
+		accountInfo := &users.UserAccountInfo{
+			Uid:       int64(userList[i].Id),
+			AccountId: userList[i].AccountId,
+		}
+		result[i] = accountInfo
+	}
+	return
+}

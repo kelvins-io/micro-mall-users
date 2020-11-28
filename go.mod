@@ -3,7 +3,6 @@ module gitee.com/cristiane/micro-mall-users
 go 1.13
 
 require (
-	gitee.com/cristiane/go-common v1.0.1 // indirect
 	gitee.com/kelvins-io/common v1.0.2
 	gitee.com/kelvins-io/kelvins v1.2.2
 	gitee.com/kelvins-io/service-config v1.0.0 // indirect

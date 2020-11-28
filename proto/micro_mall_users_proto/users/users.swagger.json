@@ -156,6 +156,85 @@
         ]
       }
     },
+    "/v1/user/info/account_id": {
+      "get": {
+        "summary": "获取用户accountId",
+        "operationId": "UsersService_GetUserAccountId",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/usersGetUserAccountIdResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "uid_list",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "int64"
+            },
+            "collectionFormat": "multi"
+          }
+        ],
+        "tags": [
+          "UsersService"
+        ]
+      }
+    },
+    "/v1/user/info/check": {
+      "get": {
+        "summary": "检查用户收货地址",
+        "operationId": "UsersService_CheckUserDeliveryInfo",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/usersCheckUserDeliveryInfoResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "uid",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "int64"
+          },
+          {
+            "name": "delivery_ids",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "collectionFormat": "multi"
+          }
+        ],
+        "tags": [
+          "UsersService"
+        ]
+      }
+    },
     "/v1/user/info/delivery": {
       "get": {
         "summary": "获取用户收货信息",
@@ -558,6 +637,42 @@
         ]
       }
     },
+    "/v1/user/state/check": {
+      "get": {
+        "summary": "检查用户",
+        "operationId": "UsersService_CheckUserState",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/usersCheckUserStateResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "uid_list",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "int64"
+            },
+            "collectionFormat": "multi"
+          }
+        ],
+        "tags": [
+          "UsersService"
+        ]
+      }
+    },
     "/v1/user/state/login": {
       "put": {
         "summary": "更新用户登录态",
@@ -647,7 +762,23 @@
         }
       }
     },
+    "usersCheckUserDeliveryInfoResponse": {
+      "type": "object",
+      "properties": {
+        "common": {
+          "$ref": "#/definitions/usersCommonResponse"
+        }
+      }
+    },
     "usersCheckUserIdentityResponse": {
+      "type": "object",
+      "properties": {
+        "common": {
+          "$ref": "#/definitions/usersCommonResponse"
+        }
+      }
+    },
+    "usersCheckUserStateResponse": {
       "type": "object",
       "properties": {
         "common": {
@@ -704,6 +835,20 @@
         },
         "info": {
           "$ref": "#/definitions/usersMerchantsMaterialInfo"
+        }
+      }
+    },
+    "usersGetUserAccountIdResponse": {
+      "type": "object",
+      "properties": {
+        "common": {
+          "$ref": "#/definitions/usersCommonResponse"
+        },
+        "info_list": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/usersUserAccountInfo"
+          }
         }
       }
     },
@@ -1179,6 +1324,18 @@
       "properties": {
         "common": {
           "$ref": "#/definitions/usersCommonResponse"
+        }
+      }
+    },
+    "usersUserAccountInfo": {
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "format": "int64"
+        },
+        "account_id": {
+          "type": "string"
         }
       }
     },

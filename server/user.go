@@ -317,7 +317,6 @@ func (u *UsersServer) FindUserInfo(ctx context.Context, req *users.FindUserInfoR
 func (u *UsersServer) UserAccountCharge(ctx context.Context, req *users.UserAccountChargeRequest) (*users.UserAccountChargeResponse, error) {
 	result := &users.UserAccountChargeResponse{Common: &users.CommonResponse{
 		Code: users.RetCode_SUCCESS,
-		Msg:  "",
 	}}
 	retCode := service.UserAccountCharge(ctx, req)
 	if retCode != code.Success {
@@ -337,5 +336,61 @@ func (u *UsersServer) UserAccountCharge(ctx context.Context, req *users.UserAcco
 		}
 		return result, nil
 	}
+	return result, nil
+}
+
+func (u *UsersServer) CheckUserDeliveryInfo(ctx context.Context, req *users.CheckUserDeliveryInfoRequest) (*users.CheckUserDeliveryInfoResponse, error) {
+	result := &users.CheckUserDeliveryInfoResponse{Common: &users.CommonResponse{
+		Code: users.RetCode_SUCCESS,
+	}}
+	retCode := service.CheckUserDeliveryInfo(ctx, req)
+	if retCode != code.Success {
+		switch retCode {
+		case code.UserDeliveryInfoNotExist:
+			result.Common.Code = users.RetCode_USER_DELIVERY_INFO_NOT_EXIST
+		default:
+			result.Common.Code = users.RetCode_ERROR
+		}
+		return result, nil
+	}
+	return result, nil
+}
+
+func (u *UsersServer) CheckUserState(ctx context.Context, req *users.CheckUserStateRequest) (*users.CheckUserStateResponse, error) {
+	result := &users.CheckUserStateResponse{Common: &users.CommonResponse{
+		Code: users.RetCode_SUCCESS,
+	}}
+	retCode := service.CheckUserState(ctx, req)
+	if retCode != code.Success {
+		switch retCode {
+		case code.UserNotExist:
+			result.Common.Code = users.RetCode_USER_NOT_EXIST
+		default:
+			result.Common.Code = users.RetCode_ERROR
+		}
+		return result, nil
+	}
+	return result, nil
+}
+
+func (u *UsersServer) GetUserAccountId(ctx context.Context, req *users.GetUserAccountIdRequest) (*users.GetUserAccountIdResponse, error) {
+	result := &users.GetUserAccountIdResponse{
+		Common: &users.CommonResponse{
+			Code: users.RetCode_SUCCESS,
+			Msg:  "",
+		},
+		InfoList: nil,
+	}
+	accountInfoList, retCode := service.GetUserAccountId(ctx, req)
+	if retCode != code.Success {
+		switch retCode {
+		case code.UserNotExist:
+			result.Common.Code = users.RetCode_USER_NOT_EXIST
+		default:
+			result.Common.Code = users.RetCode_ERROR
+		}
+		return result, nil
+	}
+	result.InfoList = accountInfoList
 	return result, nil
 }
