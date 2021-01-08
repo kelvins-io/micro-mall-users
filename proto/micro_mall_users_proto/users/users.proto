@@ -155,6 +155,9 @@ enum RetCode {
     TRANSACTION_FAILED = 50011;
     ACCOUNT_LOCK = 50012;
     ACCOUNT_INVALID = 50013;
+    USER_CHARGE_RUN = 50014;
+    USER_CHARGE_SUCCESS = 50015;
+    USER_CHARGE_TRADE_NO_EMPTY = 50016;
 }
 
 enum OperationType {
@@ -258,6 +261,7 @@ message UserAccountChargeRequest {
     AccountType account_type = 2; // 账户类型
     CoinType coin_type = 3; // 币种
     string amount = 4; // 数量
+    string out_trade_no = 5; // 外部交易号
 
     OperationMeta op_meta = 199;
 }

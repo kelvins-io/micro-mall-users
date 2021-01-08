@@ -551,6 +551,7 @@ func UserAccountCharge(ctx context.Context, req *users.UserAccountChargeRequest)
 		Owner:       accountIdList,
 		AccountType: pay_business.AccountType(req.AccountType),
 		CoinType:    pay_business.CoinType(req.CoinType),
+		OutTradeNo: req.OutTradeNo,
 		Amount:      req.Amount,
 		OpMeta: &pay_business.OperationMeta{
 			OpUid:      req.OpMeta.OpUid,
@@ -575,6 +576,12 @@ func UserAccountCharge(ctx context.Context, req *users.UserAccountChargeRequest)
 			retCode = code.AccountStateInvalid
 		case pay_business.RetCode_USER_ACCOUNT_STATE_LOCK:
 			retCode = code.AccountStateLock
+		case pay_business.RetCode_TRADE_PAY_RUN:
+			retCode = code.UserChargeRun
+		case pay_business.RetCode_TRADE_PAY_SUCCESS:
+			retCode = code.UserChargeSuccess
+		case pay_business.RetCode_TRADE_UUID_EMPTY:
+			retCode = code.UserChargeTradeNoEmpty
 		default:
 			retCode = code.ErrorServer
 		}

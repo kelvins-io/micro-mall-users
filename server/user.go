@@ -331,6 +331,12 @@ func (u *UsersServer) UserAccountCharge(ctx context.Context, req *users.UserAcco
 			result.Common.Code = users.RetCode_ACCOUNT_LOCK
 		case code.AccountStateInvalid:
 			result.Common.Code = users.RetCode_ACCOUNT_INVALID
+		case code.UserChargeRun:
+			result.Common.Code = users.RetCode_USER_CHARGE_RUN
+		case code.UserChargeSuccess:
+			result.Common.Code = users.RetCode_USER_CHARGE_SUCCESS
+		case code.UserChargeTradeNoEmpty:
+			result.Common.Code = users.RetCode_USER_CHARGE_TRADE_NO_EMPTY
 		default:
 			result.Common.Code = users.RetCode_ERROR
 		}

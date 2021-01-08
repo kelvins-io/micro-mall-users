@@ -18,6 +18,9 @@ const (
 	TransactionFailed        = 29000015
 	AccountStateLock         = 29000016
 	AccountStateInvalid      = 29000017
+	UserChargeRun = 29000018
+	UserChargeSuccess = 29000019
+	UserChargeTradeNoEmpty = 29000020
 )
 
 var ErrMap = make(map[int]string)
@@ -39,6 +42,9 @@ func init() {
 		TransactionFailed:        "事务执行失败",
 		AccountStateLock:         "用户账户锁定中",
 		AccountStateInvalid:      "用户账户无效",
+		UserChargeRun:"本次充值交易正在进行中",
+		UserChargeSuccess:"本次充值交易已成功",
+		UserChargeTradeNoEmpty:"本次充值交易号为空",
 	}
 	errcode.RegisterErrMsgDict(dict)
 	for key, _ := range dict {
