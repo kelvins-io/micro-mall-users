@@ -7,14 +7,12 @@ require (
 	gitee.com/kelvins-io/kelvins v1.2.2
 	gitee.com/kelvins-io/service-config v1.0.0 // indirect
 	github.com/RichardKnop/machinery v1.9.1
-	github.com/coreos/etcd v3.3.22+incompatible // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/dustin/go-humanize v1.0.0 // indirect
 	github.com/golang/protobuf v1.4.2
 	github.com/gomodule/redigo v2.0.0+incompatible
 	github.com/google/uuid v1.1.1
 	github.com/grpc-ecosystem/grpc-gateway v1.14.7
-	github.com/jinzhu/gorm v1.9.15 // indirect
 	github.com/robfig/cron v1.2.0 // indirect
 	github.com/satori/go.uuid v1.2.0
 	github.com/sony/sonyflake v1.0.0

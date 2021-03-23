@@ -23,7 +23,7 @@
             }
           },
           "default": {
-            "description": "An unexpected error response.",
+            "description": "An unexpected error response",
             "schema": {
               "$ref": "#/definitions/runtimeError"
             }
@@ -56,7 +56,7 @@
             }
           },
           "default": {
-            "description": "An unexpected error response.",
+            "description": "An unexpected error response",
             "schema": {
               "$ref": "#/definitions/runtimeError"
             }
@@ -93,7 +93,7 @@
             }
           },
           "default": {
-            "description": "An unexpected error response.",
+            "description": "An unexpected error response",
             "schema": {
               "$ref": "#/definitions/runtimeError"
             }
@@ -136,7 +136,7 @@
             }
           },
           "default": {
-            "description": "An unexpected error response.",
+            "description": "An unexpected error response",
             "schema": {
               "$ref": "#/definitions/runtimeError"
             }
@@ -168,7 +168,7 @@
             }
           },
           "default": {
-            "description": "An unexpected error response.",
+            "description": "An unexpected error response",
             "schema": {
               "$ref": "#/definitions/runtimeError"
             }
@@ -204,7 +204,7 @@
             }
           },
           "default": {
-            "description": "An unexpected error response.",
+            "description": "An unexpected error response",
             "schema": {
               "$ref": "#/definitions/runtimeError"
             }
@@ -247,7 +247,7 @@
             }
           },
           "default": {
-            "description": "An unexpected error response.",
+            "description": "An unexpected error response",
             "schema": {
               "$ref": "#/definitions/runtimeError"
             }
@@ -284,7 +284,7 @@
             }
           },
           "default": {
-            "description": "An unexpected error response.",
+            "description": "An unexpected error response",
             "schema": {
               "$ref": "#/definitions/runtimeError"
             }
@@ -317,7 +317,7 @@
             }
           },
           "default": {
-            "description": "An unexpected error response.",
+            "description": "An unexpected error response",
             "schema": {
               "$ref": "#/definitions/runtimeError"
             }
@@ -353,7 +353,7 @@
             }
           },
           "default": {
-            "description": "An unexpected error response.",
+            "description": "An unexpected error response",
             "schema": {
               "$ref": "#/definitions/runtimeError"
             }
@@ -384,7 +384,7 @@
             }
           },
           "default": {
-            "description": "An unexpected error response.",
+            "description": "An unexpected error response",
             "schema": {
               "$ref": "#/definitions/runtimeError"
             }
@@ -421,7 +421,7 @@
             }
           },
           "default": {
-            "description": "An unexpected error response.",
+            "description": "An unexpected error response",
             "schema": {
               "$ref": "#/definitions/runtimeError"
             }
@@ -454,7 +454,7 @@
             }
           },
           "default": {
-            "description": "An unexpected error response.",
+            "description": "An unexpected error response",
             "schema": {
               "$ref": "#/definitions/runtimeError"
             }
@@ -487,7 +487,7 @@
             }
           },
           "default": {
-            "description": "An unexpected error response.",
+            "description": "An unexpected error response",
             "schema": {
               "$ref": "#/definitions/runtimeError"
             }
@@ -520,7 +520,7 @@
             }
           },
           "default": {
-            "description": "An unexpected error response.",
+            "description": "An unexpected error response",
             "schema": {
               "$ref": "#/definitions/runtimeError"
             }
@@ -550,7 +550,7 @@
             }
           },
           "default": {
-            "description": "An unexpected error response.",
+            "description": "An unexpected error response",
             "schema": {
               "$ref": "#/definitions/runtimeError"
             }
@@ -583,7 +583,7 @@
             }
           },
           "default": {
-            "description": "An unexpected error response.",
+            "description": "An unexpected error response",
             "schema": {
               "$ref": "#/definitions/runtimeError"
             }
@@ -616,7 +616,7 @@
             }
           },
           "default": {
-            "description": "An unexpected error response.",
+            "description": "An unexpected error response",
             "schema": {
               "$ref": "#/definitions/runtimeError"
             }
@@ -649,7 +649,7 @@
             }
           },
           "default": {
-            "description": "An unexpected error response.",
+            "description": "An unexpected error response",
             "schema": {
               "$ref": "#/definitions/runtimeError"
             }
@@ -685,7 +685,7 @@
             }
           },
           "default": {
-            "description": "An unexpected error response.",
+            "description": "An unexpected error response",
             "schema": {
               "$ref": "#/definitions/runtimeError"
             }
@@ -757,7 +757,8 @@
           "$ref": "#/definitions/usersCommonResponse"
         },
         "is_exist": {
-          "type": "boolean"
+          "type": "boolean",
+          "format": "boolean"
         }
       }
     },
@@ -999,7 +1000,8 @@
           "format": "int64"
         },
         "is_associate": {
-          "type": "boolean"
+          "type": "boolean",
+          "format": "boolean"
         }
       }
     },
@@ -1045,7 +1047,8 @@
           "format": "int64"
         },
         "is_over": {
-          "type": "boolean"
+          "type": "boolean",
+          "format": "boolean"
         }
       }
     },

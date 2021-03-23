@@ -33,7 +33,6 @@ service PayBusinessService {
             body:"*"
         };
     }
-
     // 获取交易唯一ID
     rpc GetTradeUUID(GetTradeUUIDRequest) returns(GetTradeUUIDResponse) {
         option (google.api.http) = {
