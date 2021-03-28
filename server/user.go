@@ -400,3 +400,19 @@ func (u *UsersServer) GetUserAccountId(ctx context.Context, req *users.GetUserAc
 	result.InfoList = accountInfoList
 	return result, nil
 }
+
+func (u *UsersServer) ListUserInfo(ctx context.Context, req *users.ListUserInfoRequest) (*users.ListUserInfoResponse, error) {
+	result := &users.ListUserInfoResponse{
+		Common: &users.CommonResponse{
+			Code: users.RetCode_SUCCESS,
+		},
+		UserInfoList: nil,
+	}
+	userInfoList, retCode := service.ListUserInfo(ctx, req)
+	result.UserInfoList = userInfoList
+	if retCode != code.Success {
+		result.Common.Code = users.RetCode_ERROR
+		return result, nil
+	}
+	return result, nil
+}

@@ -551,7 +551,7 @@ func UserAccountCharge(ctx context.Context, req *users.UserAccountChargeRequest)
 		Owner:       accountIdList,
 		AccountType: pay_business.AccountType(req.AccountType),
 		CoinType:    pay_business.CoinType(req.CoinType),
-		OutTradeNo: req.OutTradeNo,
+		OutTradeNo:  req.OutTradeNo,
 		Amount:      req.Amount,
 		OpMeta: &pay_business.OperationMeta{
 			OpUid:      req.OpMeta.OpUid,
@@ -661,6 +661,26 @@ func GetUserAccountId(ctx context.Context, req *users.GetUserAccountIdRequest) (
 			AccountId: userList[i].AccountId,
 		}
 		result[i] = accountInfo
+	}
+	return
+}
+
+func ListUserInfo(ctx context.Context, req *users.ListUserInfoRequest) (result []*users.MobilePhone, retCode int) {
+	retCode = code.Success
+	result = make([]*users.MobilePhone, 0)
+	userInfoList, err := repository.ListUserInfo("country_code,phone", int(req.PageMeta.PageSize), int(req.PageMeta.PageNum))
+	if err != nil {
+		kelvins.ErrLogger.Errorf(ctx, "ListUserInfo err: %v, req: %+v", err, req)
+		retCode = code.ErrorServer
+		return
+	}
+	result = make([]*users.MobilePhone, len(userInfoList))
+	for i := 0; i < len(userInfoList); i++ {
+		info := &users.MobilePhone{
+			CountryCode: userInfoList[i].CountryCode,
+			Phone:       userInfoList[i].Phone,
+		}
+		result[i] = info
 	}
 	return
 }

@@ -78,3 +78,11 @@ func CheckUserExistByPhone(countryCode, phone string) (exist bool, err error) {
 
 	return false, nil
 }
+
+func ListUserInfo(sqlSelect string, pageSize, pageNum int) (result []mysql.User, err error) {
+	result = make([]mysql.User, 0)
+	err = kelvins.XORM_DBEngine.Table(mysql.TableUser).Select(sqlSelect).
+		Limit(pageSize, (pageNum-1)*pageSize).
+		Find(&result)
+	return result, err
+}

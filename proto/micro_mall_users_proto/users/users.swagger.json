@@ -372,6 +372,51 @@
         ]
       }
     },
+    "/v1/user/info/list": {
+      "get": {
+        "summary": "列表所有用户",
+        "operationId": "UsersService_ListUserInfo",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/usersListUserInfoResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "page_meta.page_num",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "page_meta.page_size",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "token",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "UsersService"
+        ]
+      }
+    },
     "/v1/user/info/phone": {
       "get": {
         "summary": "获取用户信息-手机号",
@@ -907,6 +952,20 @@
       ],
       "default": "DEFAULT_TYPE_FALSE"
     },
+    "usersListUserInfoResponse": {
+      "type": "object",
+      "properties": {
+        "common": {
+          "$ref": "#/definitions/usersCommonResponse"
+        },
+        "user_info_list": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/usersMobilePhone"
+          }
+        }
+      }
+    },
     "usersLoginByPassword": {
       "type": "object",
       "properties": {
@@ -1172,6 +1231,19 @@
         "AUDIT"
       ],
       "default": "CREATE"
+    },
+    "usersPageMeta": {
+      "type": "object",
+      "properties": {
+        "page_num": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "page_size": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
     },
     "usersPasswordResetRequest": {
       "type": "object",
