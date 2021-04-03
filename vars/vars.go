@@ -1,11 +1,10 @@
 package vars
 
 import (
+	goroute "gitee.com/cristiane/micro-mall-users/pkg/util/groutine"
 	"gitee.com/kelvins-io/common/queue"
 	"gitee.com/kelvins-io/kelvins"
 	"gitee.com/kelvins-io/kelvins/config/setting"
-	"net/http"
-	"time"
 )
 
 var (
@@ -16,5 +15,5 @@ var (
 	QueueServerUserRegisterNotice      *queue.MachineryQueue
 	QueueAMQPSettingUserStateNotice    *setting.QueueAMQPSettingS
 	QueueServerUserStateNotice         *queue.MachineryQueue
-	HttpClient                         = &http.Client{Timeout: 30 * time.Second}
+	GPool                              *goroute.Pool
 )

@@ -60,7 +60,9 @@ func RegisterUser(ctx context.Context, req *users.RegisterRequest) (args.Registe
 	}
 	result.InviteCode = user.InviteCode
 	// 协程触发邮件
-	go func() {
+	vars.GPool.WaitCount(1)
+	vars.GPool.JobQueue <- func() {
+		defer vars.GPool.JobDone()
 		pushNoticeService := NewPushNoticeService(vars.QueueServerUserRegisterNotice, PushMsgTag{
 			DeliveryTag:    args.TaskNameUserRegisterNotice,
 			DeliveryErrTag: args.TaskNameUserRegisterNoticeErr,
@@ -83,7 +85,7 @@ func RegisterUser(ctx context.Context, req *users.RegisterRequest) (args.Registe
 			kelvins.ErrLogger.Errorf(ctx, "businessMsg: %+v register notice send err: ", businessMsg, code.GetMsg(retCode))
 		}
 		kelvins.BusinessLogger.Infof(ctx, "businessMsg: %+v register notice taskUUID :%v", businessMsg, taskUUID)
-	}()
+	}
 
 	return result, retCode
 }

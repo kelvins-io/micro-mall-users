@@ -3,6 +3,7 @@ module gitee.com/cristiane/micro-mall-users
 go 1.13
 
 require (
+	gitee.com/cristiane/micro-mall-api v1.0.1
 	gitee.com/kelvins-io/common v1.0.2
 	gitee.com/kelvins-io/kelvins v1.2.2
 	gitee.com/kelvins-io/service-config v1.0.0 // indirect
@@ -25,5 +26,5 @@ require (
 	google.golang.org/grpc v1.32.0
 	google.golang.org/grpc/examples v0.0.0-20200826230536-d31b6710005d // indirect
 	google.golang.org/protobuf v1.25.0
-	xorm.io/xorm v1.0.3
+	xorm.io/xorm v1.0.4
 )
