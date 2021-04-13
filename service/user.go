@@ -60,9 +60,7 @@ func RegisterUser(ctx context.Context, req *users.RegisterRequest) (args.Registe
 	}
 	result.InviteCode = user.InviteCode
 	// 协程触发邮件
-	vars.GPool.WaitCount(1)
-	vars.GPool.JobQueue <- func() {
-		defer vars.GPool.JobDone()
+	noticeReg := func() {
 		pushNoticeService := NewPushNoticeService(vars.QueueServerUserRegisterNotice, PushMsgTag{
 			DeliveryTag:    args.TaskNameUserRegisterNotice,
 			DeliveryErrTag: args.TaskNameUserRegisterNoticeErr,
@@ -86,6 +84,7 @@ func RegisterUser(ctx context.Context, req *users.RegisterRequest) (args.Registe
 		}
 		kelvins.BusinessLogger.Infof(ctx, "businessMsg: %+v register notice taskUUID :%v", businessMsg, taskUUID)
 	}
+	vars.GPool.JobQueue <- noticeReg
 
 	return result, retCode
 }

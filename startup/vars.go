@@ -1,7 +1,8 @@
 package startup
 
 import (
-	goroute "gitee.com/cristiane/micro-mall-users/pkg/util/groutine"
+
+	"gitee.com/cristiane/micro-mall-users/pkg/util/goroutine"
 	"gitee.com/cristiane/micro-mall-users/vars"
 	"gitee.com/kelvins-io/kelvins/setup"
 )
@@ -23,6 +24,6 @@ func SetupVars() error {
 		}
 	}
 
-	vars.GPool = goroute.NewPool(20,100)
+	vars.GPool = goroutine.NewPool(20,100)
 	return nil
 }

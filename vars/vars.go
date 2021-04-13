@@ -1,7 +1,7 @@
 package vars
 
 import (
-	goroute "gitee.com/cristiane/micro-mall-users/pkg/util/groutine"
+	"gitee.com/cristiane/micro-mall-users/pkg/util/goroutine"
 	"gitee.com/kelvins-io/common/queue"
 	"gitee.com/kelvins-io/kelvins"
 	"gitee.com/kelvins-io/kelvins/config/setting"
@@ -15,5 +15,5 @@ var (
 	QueueServerUserRegisterNotice      *queue.MachineryQueue
 	QueueAMQPSettingUserStateNotice    *setting.QueueAMQPSettingS
 	QueueServerUserStateNotice         *queue.MachineryQueue
-	GPool                              *goroute.Pool
+	GPool                              *goroutine.Pool
 )
