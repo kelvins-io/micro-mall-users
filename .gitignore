@@ -15,3 +15,8 @@
 /vendor
 micro-mall-users
 etc/app.ini
+micro-mall-users.pid
+micro-mall-users-darwin-amd64
+micro-mall-users-linux-amd64
+micro-mall-users-windows-amd64.exe
+micro-mall-users-windows-amd64
