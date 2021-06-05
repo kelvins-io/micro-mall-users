@@ -84,7 +84,7 @@ func RegisterUser(ctx context.Context, req *users.RegisterRequest) (args.Registe
 		}
 		kelvins.BusinessLogger.Infof(ctx, "businessMsg: %+v register notice taskUUID :%v", businessMsg, taskUUID)
 	}
-	vars.GPool.JobQueue <- noticeReg
+	vars.GPool.SendJob(noticeReg)
 
 	return result, retCode
 }
@@ -142,7 +142,7 @@ func LoginUser(ctx context.Context, req *users.LoginUserRequest) (string, int) {
 	}
 	result = token
 	// 更新用户状态
-	go func() {
+	updateUserState := func() {
 		state := args.UserOnlineState{
 			Uid:   user.Id,
 			State: "online",
@@ -153,7 +153,8 @@ func LoginUser(ctx context.Context, req *users.LoginUserRequest) (string, int) {
 		if err != nil {
 			kelvins.ErrLogger.Errorf(ctx, "setUserState err: %v, userLoginKey: %+v", err, userLoginKey)
 		}
-	}()
+	}
+	vars.GPool.SendJob(updateUserState)
 
 	return result, retCode
 }
@@ -197,7 +198,7 @@ func PasswordReset(ctx context.Context, req *users.PasswordResetRequest) int {
 	}
 
 	// 触发密码变更消息
-	go func() {
+	userPwdChangeNotify := func() {
 		pushNoticeService := NewPushNoticeService(vars.QueueServerUserStateNotice, PushMsgTag{
 			DeliveryTag:    args.TaskNameUserStateNotice,
 			DeliveryErrTag: args.TaskNameUserStateNoticeErr,
@@ -213,12 +214,12 @@ func PasswordReset(ctx context.Context, req *users.PasswordResetRequest) int {
 				Time: util.ParseTimeOfStr(time.Now().Unix()),
 			}),
 		}
-		taskUUID, retCode := pushNoticeService.PushMessage(ctx, businessMsg)
+		_, retCode := pushNoticeService.PushMessage(ctx, businessMsg)
 		if retCode != code.Success {
 			kelvins.ErrLogger.Errorf(ctx, "Password Reset businessMsg: %+v  notice send err: ", businessMsg, code.GetMsg(retCode))
 		}
-		kelvins.ErrLogger.Infof(ctx, "Password Reset businessMsg: %+v  taskUUID :%v", businessMsg, taskUUID)
-	}()
+	}
+	vars.GPool.SendJob(userPwdChangeNotify)
 
 	return code.Success
 }
