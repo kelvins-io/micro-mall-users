@@ -4,20 +4,79 @@
 微商城-用户系统
 
 #### 软件架构
-软件架构说明
+grpc
 
+#### 框架，库依赖
+kelvins框架支持（gRPC，cron，queue，web支持）：https://gitee.com/kelvins-io/kelvins   
+g2cache缓存库支持（两级缓存）：https://gitee.com/kelvins-io/g2cache   
 
 #### 安装教程
-
-1.  xxxx
-2.  xxxx
-3.  xxxx
+1.仅构建  sh build.sh   
+2 运行  sh build-run.sh
 
 #### 使用说明
+配置参考
+```toml
+[kelvins-server]
+EndPoint = 8080
+IsRecordCallResponse = true
 
-1.  xxxx
-2.  xxxx
-3.  xxxx
+[kelvins-logger]
+RootPath = "./logs"
+Level = "debug"
+
+[kelvins-mysql]
+Host = "127.0.0.1:3306"
+UserName = "root"
+Password = "xxxx"
+DBName = "micro_mall_user"
+Charset = "utf8"
+PoolNum =  10
+MaxIdleConns = 5
+ConnMaxLifeSecond = 3600
+MultiStatements = true
+ParseTime = true
+
+[kelvins-jwt]
+Secret = "&WJof0jaY4ByTHR2"
+TokenExpireSecond = 2592000
+
+[kelvins-redis]
+Host = "127.0.0.1:6379"
+Password = "xxx"
+DB = 1
+PoolNum = 10
+
+[queue-user-register-notice]
+Broker = "amqp://micro-mall:szJ9aePR@localhost:5672/micro-mall"
+DefaultQueue = "user_register_notice"
+ResultBackend = "redis://xxx@127.0.0.1:6379/8"
+ResultsExpireIn = 3600
+Exchange = "user_register_notice"
+ExchangeType = "direct"
+BindingKey = "user_register_notice"
+PrefetchCount = 5
+TaskRetryCount = 3
+TaskRetryTimeout = 3600
+
+[queue-user-state-notice]
+Broker = "amqp://micro-mall:szJ9aePR@localhost:5672/micro-mall"
+DefaultQueue = "user_state_notice"
+ResultBackend = "redis://xxx@127.0.0.1:6379/8"
+ResultsExpireIn = 3600
+Exchange = "user_state_notice"
+ExchangeType = "direct"
+BindingKey = "user_state_notice"
+PrefetchCount = 5
+TaskRetryCount = 3
+TaskRetryTimeout = 3600
+
+[email-config]
+User = "xxx@qq.com"
+Password = "xx"
+Host = "smtp.qq.com"
+Port = "465"
+```
 
 #### 参与贡献
 
@@ -26,12 +85,3 @@
 3.  提交代码
 4.  新建 Pull Request
 
-
-#### 码云特技
-
-1.  使用 Readme\_XXX.md 来支持不同的语言，例如 Readme\_en.md, Readme\_zh.md
-2.  码云官方博客 [blog.gitee.com](https://blog.gitee.com)
-3.  你可以 [https://gitee.com/explore](https://gitee.com/explore) 这个地址来了解码云上的优秀开源项目
-4.  [GVP](https://gitee.com/gvp) 全称是码云最有价值开源项目，是码云综合评定出的优秀开源项目
-5.  码云官方提供的使用手册 [https://gitee.com/help](https://gitee.com/help)
-6.  码云封面人物是一档用来展示码云会员风采的栏目 [https://gitee.com/gitee-stars/](https://gitee.com/gitee-stars/)

@@ -43,7 +43,7 @@ func RegisterUser(ctx context.Context, req *users.RegisterRequest) (args.Registe
 		Phone:        req.Phone,
 		CountryCode:  req.CountryCode,
 		Email:        req.Email,
-		State:        0,
+		State:        3,
 		IdCardNo:     idCardNo,
 		Inviter:      int(req.InviterUser),
 		InviteCode:   GenInviterCode(),
@@ -629,7 +629,7 @@ func CheckUserState(ctx context.Context, req *users.CheckUserStateRequest) (retC
 			return
 		}
 		if infoList[i].State != 3 {
-			retCode = code.UserNotExist
+			retCode = code.UserStateNotVerify
 			return
 		}
 	}

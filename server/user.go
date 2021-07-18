@@ -371,10 +371,11 @@ func (u *UsersServer) CheckUserState(ctx context.Context, req *users.CheckUserSt
 		switch retCode {
 		case code.UserNotExist:
 			result.Common.Code = users.RetCode_USER_NOT_EXIST
+		case code.UserStateNotVerify:
+			result.Common.Code = users.RetCode_USER_STATE_NOT_VERIFY
 		default:
 			result.Common.Code = users.RetCode_ERROR
 		}
-		return result, nil
 	}
 	return result, nil
 }
