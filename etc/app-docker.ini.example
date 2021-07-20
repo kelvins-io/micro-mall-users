@@ -1,0 +1,59 @@
+[kelvins-server]
+EndPoint = 8080
+IsRecordCallResponse = true
+
+[kelvins-logger]
+RootPath = "./logs"
+Level = "debug"
+
+[kelvins-mysql]
+Host = "mysql5_7:3306"
+UserName = "root"
+Password = "micro-mall"
+DBName = "micro_mall_user"
+Charset = "utf8"
+PoolNum =  10
+MaxIdleConns = 5
+ConnMaxLifeSecond = 3600
+MultiStatements = true
+ParseTime = true
+
+[kelvins-jwt]
+Secret = "&WJof0jaY4ByTHR2"
+TokenExpireSecond = 2592000
+
+[kelvins-redis]
+Host = "redis:6379"
+Password = "oyuioyiuoyui"
+DB = 1
+PoolNum = 10
+
+[queue-user-register-notice]
+Broker = "amqp://root:micro-mall@rabbitmq:5672/micro-mall"
+DefaultQueue = "user_register_notice"
+ResultBackend = "redis://oyuioyiuoyui@redis:6379/8"
+ResultsExpireIn = 3600
+Exchange = "user_register_notice"
+ExchangeType = "direct"
+BindingKey = "user_register_notice"
+PrefetchCount = 5
+TaskRetryCount = 3
+TaskRetryTimeout = 3600
+
+[queue-user-state-notice]
+Broker = "amqp://root:micro-mall@rabbitmq:5672/micro-mall"
+DefaultQueue = "user_state_notice"
+ResultBackend = "redis://oyuioyiuoyui@redis:6379/8"
+ResultsExpireIn = 3600
+Exchange = "user_state_notice"
+ExchangeType = "direct"
+BindingKey = "user_state_notice"
+PrefetchCount = 5
+TaskRetryCount = 3
+TaskRetryTimeout = 3600
+
+[email-config]
+User = "xxx@qq.com"
+Password = "xx"
+Host = "smtp.qq.com"
+Port = "465"
