@@ -11,3 +11,7 @@ type JwtSettingS struct {
 	Secret            string
 	TokenExpireSecond int
 }
+
+type EmailNoticeSettingS struct {
+	Receivers []string `json:"receivers"`
+}

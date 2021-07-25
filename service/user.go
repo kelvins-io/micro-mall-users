@@ -9,10 +9,12 @@ import (
 	"gitee.com/cristiane/micro-mall-users/pkg/code"
 	"gitee.com/cristiane/micro-mall-users/pkg/util"
 	"gitee.com/cristiane/micro-mall-users/pkg/util/cache"
+	"gitee.com/cristiane/micro-mall-users/pkg/util/email"
 	"gitee.com/cristiane/micro-mall-users/proto/micro_mall_pay_proto/pay_business"
 	"gitee.com/cristiane/micro-mall-users/proto/micro_mall_users_proto/users"
 	"gitee.com/cristiane/micro-mall-users/repository"
 	"gitee.com/cristiane/micro-mall-users/vars"
+	"gitee.com/kelvins-io/common/hash"
 	"gitee.com/kelvins-io/common/json"
 	"gitee.com/kelvins-io/common/password"
 	"gitee.com/kelvins-io/kelvins"
@@ -22,7 +24,14 @@ import (
 
 func RegisterUser(ctx context.Context, req *users.RegisterRequest) (args.RegisterResult, int) {
 	result := args.RegisterResult{}
-	retCode := code.Success
+	isExist, ret := CheckUserExist(ctx, req.CountryCode, req.Phone)
+	if ret != code.Success {
+		return result, code.ErrorServer
+	}
+	if isExist {
+		return result, code.UserExist
+	}
+
 	salt := password.GenerateSalt()
 	pwd := password.GeneratePassword(req.Password, salt)
 	idCardNo := sql.NullString{
@@ -50,8 +59,15 @@ func RegisterUser(ctx context.Context, req *users.RegisterRequest) (args.Registe
 		CreateTime:   time.Now(),
 		UpdateTime:   time.Now(),
 	}
-	err := repository.CreateUser(&user)
+	tx := kelvins.XORM_DBEngine.NewSession()
+	err := tx.Begin()
 	if err != nil {
+		kelvins.ErrLogger.Errorf(ctx, "CreateUser NewSession err: %v", err)
+		return result, code.ErrorServer
+	}
+	err = repository.CreateUser(tx, &user)
+	if err != nil {
+		tx.Rollback()
 		kelvins.ErrLogger.Errorf(ctx, "CreateUser err: %v, user: %+v", err, user)
 		if strings.Contains(err.Error(), code.GetMsg(code.DBDuplicateEntry)) {
 			return result, code.UserExist
@@ -59,40 +75,39 @@ func RegisterUser(ctx context.Context, req *users.RegisterRequest) (args.Registe
 		return result, code.ErrorServer
 	}
 	result.InviteCode = user.InviteCode
-	// 协程触发邮件
-	noticeReg := func() {
-		pushNoticeService := NewPushNoticeService(vars.QueueServerUserRegisterNotice, PushMsgTag{
-			DeliveryTag:    args.TaskNameUserRegisterNotice,
-			DeliveryErrTag: args.TaskNameUserRegisterNoticeErr,
-			RetryCount:     vars.QueueAMQPSettingUserRegisterNotice.TaskRetryCount,
-			RetryTimeout:   vars.QueueAMQPSettingUserRegisterNotice.TaskRetryTimeout,
-		})
-		businessMsg := args.CommonBusinessMsg{
-			Type: args.UserStateEventTypeRegister,
-			Tag:  args.GetMsg(args.UserStateEventTypeRegister),
-			UUID: genUUID(),
-			Msg: json.MarshalToStringNoError(args.UserRegisterNotice{
-				CountryCode: req.CountryCode,
-				Phone:       req.Phone,
-				Time:        util.ParseTimeOfStr(time.Now().Unix()),
-				State:       0,
-			}),
-		}
-		taskUUID, retCode := pushNoticeService.PushMessage(ctx, businessMsg)
-		if retCode != code.Success {
-			kelvins.ErrLogger.Errorf(ctx, "businessMsg: %+v register notice send err: ", businessMsg, code.GetMsg(retCode))
-		}
-		kelvins.BusinessLogger.Infof(ctx, "businessMsg: %+v register notice taskUUID :%v", businessMsg, taskUUID)
+	pushNoticeService := NewPushNoticeService(vars.QueueServerUserRegisterNotice, PushMsgTag{
+		DeliveryTag:    args.TaskNameUserRegisterNotice,
+		DeliveryErrTag: args.TaskNameUserRegisterNoticeErr,
+		RetryCount:     vars.QueueAMQPSettingUserRegisterNotice.TaskRetryCount,
+		RetryTimeout:   vars.QueueAMQPSettingUserRegisterNotice.TaskRetryTimeout,
+	})
+	businessMsg := args.CommonBusinessMsg{
+		Type: args.UserStateEventTypeRegister,
+		Tag:  args.GetMsg(args.UserStateEventTypeRegister),
+		UUID: genUUID(),
+		Msg: json.MarshalToStringNoError(args.UserRegisterNotice{
+			CountryCode: req.CountryCode,
+			Phone:       req.Phone,
+			Time:        util.ParseTimeOfStr(time.Now().Unix()),
+			State:       3,
+		}),
 	}
-	vars.GPool.SendJob(noticeReg)
+	_, ret = pushNoticeService.PushMessage(ctx, businessMsg)
+	if ret != code.Success {
+		tx.Rollback()
+		kelvins.ErrLogger.Errorf(ctx, "PushMessage register req: %+v, err: %v", businessMsg, code.GetMsg(ret))
+		return result, code.ErrorServer
+	}
+	tx.Commit()
 
-	return result, retCode
+	return result, code.Success
 }
 
 const sqlSelectLoginUser = "id,user_name,password,password_salt"
 
 func LoginUser(ctx context.Context, req *users.LoginUserRequest) (string, int) {
 	result := ""
+	loginType := ""
 	retCode := code.Success
 	user := &mysql.User{}
 	switch req.GetLoginType() {
@@ -103,6 +118,7 @@ func LoginUser(ctx context.Context, req *users.LoginUserRequest) (string, int) {
 			kelvins.ErrLogger.Errorf(ctx, "GetUserByPhone err: %v, req: %+v", err, req)
 			return result, code.ErrorServer
 		}
+		loginType = "验证码"
 		user = userDB
 	case users.LoginType_PWD:
 		loginInfo := req.GetPwd()
@@ -122,6 +138,7 @@ func LoginUser(ctx context.Context, req *users.LoginUserRequest) (string, int) {
 				return result, code.UserPwdNotMatch
 			}
 			user = userDB
+			loginType = "手机号-密码"
 		case users.LoginPwdKind_EMAIL:
 			userDB, err := repository.GetUserByEmail(sqlSelectLoginUser, loginInfo.GetEmail().GetContent())
 			if err != nil {
@@ -129,8 +146,10 @@ func LoginUser(ctx context.Context, req *users.LoginUserRequest) (string, int) {
 				return result, code.ErrorServer
 			}
 			user = userDB
+			loginType = "邮箱-密码"
 		}
 	case users.LoginType_TOKEN:
+		loginType = "认证token"
 	}
 	if user.Id <= 0 {
 		return "", code.UserNotExist
@@ -141,8 +160,9 @@ func LoginUser(ctx context.Context, req *users.LoginUserRequest) (string, int) {
 		return token, code.ErrorServer
 	}
 	result = token
-	// 更新用户状态
+
 	updateUserState := func() {
+		// 更新用户状态
 		state := args.UserOnlineState{
 			Uid:   user.Id,
 			State: "online",
@@ -152,6 +172,16 @@ func LoginUser(ctx context.Context, req *users.LoginUserRequest) (string, int) {
 		err := cache.Set(kelvins.RedisConn, userLoginKey, json.MarshalToStringNoError(state), 7200)
 		if err != nil {
 			kelvins.ErrLogger.Errorf(ctx, "setUserState err: %v, userLoginKey: %+v", err, userLoginKey)
+		}
+
+		// 发送登录邮件
+		emailNotice := fmt.Sprintf(args.UserLoginTemplate, user.UserName, time.Now().String(), loginType)
+		for _, receiver := range vars.EmailNoticeSetting.Receivers {
+			err = email.SendEmailNotice(ctx, receiver, vars.App.Name, emailNotice)
+			if err != nil {
+				kelvins.ErrLogger.Info(ctx, "SendEmailNotice err, emailNotice: %v", emailNotice)
+				return
+			}
 		}
 	}
 	vars.GPool.SendJob(updateUserState)
@@ -193,7 +223,8 @@ func PasswordReset(ctx context.Context, req *users.PasswordResetRequest) int {
 	}
 	err = repository.UpdateUserInfo(where, maps)
 	if err != nil {
-		kelvins.ErrLogger.Errorf(ctx, "UpdateUserInfo err: %v, where: %+v, maps: %+v", err, where, maps)
+		_md5Pwd := hash.MD5EncodeToString(pwd)
+		kelvins.ErrLogger.Errorf(ctx, "UpdateUserInfo err: %v, where: %+v, maps: %q", err, where, _md5Pwd)
 		return code.ErrorServer
 	}
 
@@ -241,7 +272,7 @@ func UpdateUserLoginState(ctx context.Context, req *users.UpdateUserLoginStateRe
 	userLoginKey := fmt.Sprintf("%v%d", args.CacheKeyUserSate, req.Uid)
 	err = cache.Set(kelvins.RedisConn, userLoginKey, json.MarshalToStringNoError(state), 7200)
 	if err != nil {
-		kelvins.ErrLogger.Errorf(ctx, "setUserState err: %v, userLoginKey: %+v", err, userLoginKey)
+		kelvins.ErrLogger.Errorf(ctx, "setUserState err: %v, userLoginKey: %q", err, userLoginKey)
 		return code.ErrorServer
 	}
 	return code.Success
@@ -355,7 +386,7 @@ func ModifyUserDeliveryInfo(ctx context.Context, req *users.ModifyUserDeliveryIn
 		if req.Info.Id <= 0 {
 			return code.UserDeliveryInfoNotExist
 		}
-		deliveryInfoDB, err := repository.GetUserLogisticsDelivery("id", req.Info.Id)
+		deliveryInfoDB, err := repository.GetUserLogisticsDelivery("id", req.Uid, req.Info.Id)
 		if err != nil {
 			kelvins.ErrLogger.Errorf(ctx, "GetUserLogisticsDelivery err: %v, id: %v", err, req.Info.Id)
 			return code.ErrorServer
@@ -456,6 +487,9 @@ func GetUserDeliveryInfo(ctx context.Context, req *users.GetUserDeliveryInfoRequ
 			kelvins.ErrLogger.Errorf(ctx, "GetUserLogisticsDeliveryList err: %v, uid: %v", err, req.Uid)
 			return result, code.ErrorServer
 		}
+		if len(list) == 0 {
+			return result, code.UserDeliveryInfoNotExist
+		}
 		result = make([]*users.UserDeliveryInfo, len(list))
 		for i := 0; i < len(list); i++ {
 			info := &users.UserDeliveryInfo{
@@ -470,10 +504,13 @@ func GetUserDeliveryInfo(ctx context.Context, req *users.GetUserDeliveryInfoRequ
 			result[i] = info
 		}
 	} else {
-		infoDB, err := repository.GetUserLogisticsDelivery(sqlSelectUserDeliveryInfo, int64(req.UserDeliveryId))
+		infoDB, err := repository.GetUserLogisticsDelivery(sqlSelectUserDeliveryInfo, req.Uid, int64(req.UserDeliveryId))
 		if err != nil {
 			kelvins.ErrLogger.Errorf(ctx, "GetUserLogisticsDelivery err: %v, uid: %v,id: %v", err, req.Uid, req.UserDeliveryId)
 			return result, code.ErrorServer
+		}
+		if infoDB.Id <= 0 {
+			return result, code.UserDeliveryInfoNotExist
 		}
 		info := &users.UserDeliveryInfo{
 			Id:           infoDB.Id,
@@ -523,7 +560,7 @@ func FindUserInfo(ctx context.Context, req *users.FindUserInfoRequest) (result [
 
 func UserAccountCharge(ctx context.Context, req *users.UserAccountChargeRequest) (retCode int) {
 	retCode = code.Success
-	userInfoList, err := repository.FindUserInfo("id,account_id", req.UidList)
+	userInfoList, err := repository.FindUserInfo("id,account_id,user_name", req.UidList)
 	if err != nil {
 		kelvins.ErrLogger.Errorf(ctx, "FindUserInfo err: %v, uidList: %+v", err, req.GetUidList())
 		retCode = code.ErrorServer
@@ -544,7 +581,7 @@ func UserAccountCharge(ctx context.Context, req *users.UserAccountChargeRequest)
 	serverName := args.RpcServiceMicroMallPay
 	conn, err := util.GetGrpcClient(serverName)
 	if err != nil {
-		kelvins.ErrLogger.Errorf(ctx, "GetGrpcClient %v,err: %v", serverName, err)
+		kelvins.ErrLogger.Errorf(ctx, "GetGrpcClient %v err: %v", serverName, err)
 		return code.ErrorServer
 	}
 	defer conn.Close()
@@ -568,7 +605,7 @@ func UserAccountCharge(ctx context.Context, req *users.UserAccountChargeRequest)
 		return code.ErrorServer
 	}
 	if payRsp.Common.Code != pay_business.RetCode_SUCCESS {
-		kelvins.ErrLogger.Errorf(ctx, "AccountCharge  %v,err: %v, req: %+v, rsp: %+v", serverName, err, payReq, payRsp)
+		kelvins.ErrLogger.Errorf(ctx, "AccountCharge req: %+v, rsp: %+v", payReq, payRsp)
 		switch payRsp.Common.Code {
 		case pay_business.RetCode_USER_ACCOUNT_NOT_EXIST:
 			retCode = code.AccountNotExist
@@ -589,6 +626,29 @@ func UserAccountCharge(ctx context.Context, req *users.UserAccountChargeRequest)
 		}
 		return
 	}
+
+	vars.GPool.SendJob(func() {
+		// 发送登录邮件
+		var un strings.Builder
+		for _, v := range userInfoList {
+			un.WriteString(v.UserName)
+		}
+		var coin string
+		if req.CoinType == 0 {
+			coin = "RMB"
+		} else {
+			coin = "USD"
+		}
+		emailNotice := fmt.Sprintf(args.UserAccountChargeTemplate, un.String(), time.Now(), req.Amount, coin)
+		for _, receiver := range vars.EmailNoticeSetting.Receivers {
+			err = email.SendEmailNotice(ctx, receiver, vars.App.Name, emailNotice)
+			if err != nil {
+				kelvins.ErrLogger.Info(ctx, "SendEmailNotice err, emailNotice: %v", emailNotice)
+				return
+			}
+		}
+	})
+
 	return
 }
 

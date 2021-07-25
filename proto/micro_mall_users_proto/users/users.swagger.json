@@ -913,7 +913,7 @@
         "common": {
           "$ref": "#/definitions/usersCommonResponse"
         },
-        "info": {
+        "info_list": {
           "type": "array",
           "items": {
             "$ref": "#/definitions/usersUserDeliveryInfo"

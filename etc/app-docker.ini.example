@@ -57,3 +57,6 @@ User = "xxx@qq.com"
 Password = "xx"
 Host = "smtp.qq.com"
 Port = "465"
+
+[email-notice]
+Receivers = "xx@qq.com"

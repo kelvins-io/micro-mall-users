@@ -23,11 +23,14 @@ const (
 )
 
 const (
-	Unknown            = 0
-	VerifyCodeRegister = 1
-	VerifyCodeLogin    = 2
-	VerifyCodePassword = 3
-	VerifyCodeTemplate = "【%v】验证码 %v，用于%v，%v分钟内有效，验证码提供给其他人可能导致账号被盗，请勿泄漏，谨防被骗。"
+	Unknown                        = 0
+	VerifyCodeRegister             = 1
+	VerifyCodeLogin                = 2
+	VerifyCodePassword             = 3
+	UserLoginTemplate              = "尊敬的用户【%s】你好，你于：%v 在微商城使用【%s】登录"
+	UserAccountChargeTemplate      = "尊敬的用户【%s】你好，你与：%v 在微商城 充值【%s-%s】成功"
+	UserApplyMerchantTemplate      = "尊敬的用户【%s】你好。你与：%v 在微商城申请【%v】商户成功"
+	UserModifyMerchantInfoTemplate = "尊敬的用户【%s】你好。你与：%v 在微商城变更商户资料成功"
 )
 
 var MsgFlags = map[int]string{

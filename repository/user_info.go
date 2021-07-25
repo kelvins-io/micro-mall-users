@@ -3,10 +3,11 @@ package repository
 import (
 	"gitee.com/cristiane/micro-mall-users/model/mysql"
 	"gitee.com/kelvins-io/kelvins"
+	"xorm.io/xorm"
 )
 
-func CreateUser(user *mysql.User) (err error) {
-	_, err = kelvins.XORM_DBEngine.Table(mysql.TableUser).Insert(user)
+func CreateUser(tx *xorm.Session,user *mysql.User) (err error) {
+	_, err = tx.Table(mysql.TableUser).Insert(user)
 	return
 }
 

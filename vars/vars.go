@@ -15,5 +15,6 @@ var (
 	QueueServerUserRegisterNotice      *queue.MachineryQueue
 	QueueAMQPSettingUserStateNotice    *setting.QueueAMQPSettingS
 	QueueServerUserStateNotice         *queue.MachineryQueue
+	EmailNoticeSetting                 *EmailNoticeSettingS
 	GPool                              *goroutine.Pool
 )

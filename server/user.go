@@ -288,13 +288,20 @@ func (u *UsersServer) ModifyUserDeliveryInfo(ctx context.Context, req *users.Mod
 func (u *UsersServer) GetUserDeliveryInfo(ctx context.Context, req *users.GetUserDeliveryInfoRequest) (*users.GetUserDeliveryInfoResponse, error) {
 	result := &users.GetUserDeliveryInfoResponse{Common: &users.CommonResponse{
 		Code: users.RetCode_SUCCESS,
-	}, Info: make([]*users.UserDeliveryInfo, 0)}
+	}, InfoList: make([]*users.UserDeliveryInfo, 0)}
 	list, retCode := service.GetUserDeliveryInfo(ctx, req)
 	if retCode != code.Success {
-		result.Common.Code = users.RetCode_ERROR
+		switch retCode {
+		case code.UserNotExist:
+			result.Common.Code = users.RetCode_USER_NOT_EXIST
+		case code.UserDeliveryInfoNotExist:
+			result.Common.Code = users.RetCode_USER_DELIVERY_INFO_NOT_EXIST
+		default:
+			result.Common.Code = users.RetCode_ERROR
+		}
 		return result, nil
 	}
-	result.Info = list
+	result.InfoList = list
 	return result, nil
 }
 

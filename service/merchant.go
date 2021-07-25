@@ -2,10 +2,14 @@ package service
 
 import (
 	"context"
+	"fmt"
+	"gitee.com/cristiane/micro-mall-users/model/args"
 	"gitee.com/cristiane/micro-mall-users/model/mysql"
 	"gitee.com/cristiane/micro-mall-users/pkg/code"
+	"gitee.com/cristiane/micro-mall-users/pkg/util/email"
 	"gitee.com/cristiane/micro-mall-users/proto/micro_mall_users_proto/users"
 	"gitee.com/cristiane/micro-mall-users/repository"
+	"gitee.com/cristiane/micro-mall-users/vars"
 	"gitee.com/kelvins-io/common/errcode"
 	"gitee.com/kelvins-io/kelvins"
 	"github.com/google/uuid"
@@ -23,6 +27,7 @@ func MerchantsMaterial(ctx context.Context, req *users.MerchantsMaterialRequest)
 	if !exist {
 		return merchantId, code.UserNotExist
 	}
+
 	if req.OperationType == users.OperationType_CREATE {
 		merchantMaterial := mysql.Merchant{
 			Uid:          int(req.Info.Uid),
@@ -49,6 +54,21 @@ func MerchantsMaterial(ctx context.Context, req *users.MerchantsMaterialRequest)
 			return merchantId, code.ErrorServer
 		}
 		merchantId = record.MerchantId
+
+		vars.GPool.SendJob(func() {
+			u, ret := GetUserInfo(ctx, int(req.Info.Uid))
+			if ret == code.Success {
+				emailNotice := fmt.Sprintf(args.UserApplyMerchantTemplate, u.UserName, time.Now(), req.Info.RegisterAddr)
+				for _, receiver := range vars.EmailNoticeSetting.Receivers {
+					err = email.SendEmailNotice(ctx, receiver, vars.App.Name, emailNotice)
+					if err != nil {
+						kelvins.ErrLogger.Info(ctx, "SendEmailNotice err, emailNotice: %v", emailNotice)
+						return
+					}
+				}
+			}
+		})
+
 		return merchantId, code.Success
 	} else if req.OperationType == users.OperationType_UPDATE {
 		query := map[string]interface{}{
@@ -67,6 +87,20 @@ func MerchantsMaterial(ctx context.Context, req *users.MerchantsMaterialRequest)
 			kelvins.ErrLogger.Errorf(ctx, "UpdateMerchantsMaterial err: %v,query : %+v, maps: %+v", err, query, maps)
 			return merchantId, code.ErrorServer
 		}
+
+		vars.GPool.SendJob(func() {
+			u, ret := GetUserInfo(ctx, int(req.Info.Uid))
+			if ret == code.Success {
+				emailNotice := fmt.Sprintf(args.UserModifyMerchantInfoTemplate, u.UserName, time.Now())
+				for _, receiver := range vars.EmailNoticeSetting.Receivers {
+					err = email.SendEmailNotice(ctx, receiver, vars.App.Name, emailNotice)
+					if err != nil {
+						kelvins.ErrLogger.Info(ctx, "SendEmailNotice err, emailNotice: %v", emailNotice)
+						return
+					}
+				}
+			}
+		})
 		return merchantId, code.Success
 	}
 	return merchantId, code.Success
@@ -75,7 +109,7 @@ func MerchantsMaterial(ctx context.Context, req *users.MerchantsMaterialRequest)
 func GetMerchantsMaterial(ctx context.Context, req *users.GetMerchantsMaterialRequest) (*mysql.Merchant, int) {
 	merchantInfo, err := repository.GetMerchantsMaterial(int(req.MaterialId))
 	if err != nil {
-		kelvins.ErrLogger.Errorf(ctx, "GetMerchantsMaterialByUid err: %v,MaterialId : %+v", err, req.ProtoMessage)
+		kelvins.ErrLogger.Errorf(ctx, "GetMerchantsMaterialByUid err: %v,MaterialId : %v", err, req.GetMaterialId())
 		return merchantInfo, code.ErrorServer
 	}
 	return merchantInfo, code.Success

@@ -28,19 +28,17 @@ func (m *MerchantsServer) MerchantsMaterial(ctx context.Context, req *users.Merc
 	merchantId, retCode := service.MerchantsMaterial(ctx, req)
 	result.MaterialId = int64(merchantId)
 	if retCode != code.Success {
-		if retCode == code.UserExist {
-			result.Common.Code = users.RetCode_USER_EXIST
-			result.Common.Msg = errcode.GetErrMsg(code.UserExist)
-		} else if retCode == code.UserNotExist {
+		switch retCode {
+		case code.UserNotExist:
 			result.Common.Code = users.RetCode_USER_NOT_EXIST
 			result.Common.Msg = errcode.GetErrMsg(code.UserNotExist)
-		} else if retCode == code.MerchantNotExist {
-			result.Common.Code = users.RetCode_MERCHANT_NOT_EXIST
-			result.Common.Msg = errcode.GetErrMsg(code.MerchantNotExist)
-		} else if retCode == code.MerchantExist {
+		case code.MerchantExist:
 			result.Common.Code = users.RetCode_MERCHANT_EXIST
 			result.Common.Msg = errcode.GetErrMsg(code.MerchantExist)
-		} else {
+		case code.MerchantNotExist:
+			result.Common.Code = users.RetCode_MERCHANT_NOT_EXIST
+			result.Common.Msg = errcode.GetErrMsg(code.MerchantNotExist)
+		default:
 			result.Common.Code = users.RetCode_ERROR
 			result.Common.Msg = errcode.GetErrMsg(code.ErrorServer)
 		}
@@ -57,7 +55,6 @@ func (m *MerchantsServer) GetMerchantsMaterial(ctx context.Context, req *users.G
 	var result users.GetMerchantsMaterialResponse
 	result.Common = &users.CommonResponse{
 		Code: users.RetCode_SUCCESS,
-		Msg:  "",
 	}
 	result.Info = &users.MerchantsMaterialInfo{}
 	if req.MaterialId <= 0 {
@@ -67,19 +64,14 @@ func (m *MerchantsServer) GetMerchantsMaterial(ctx context.Context, req *users.G
 	}
 	merchantInfo, retCode := service.GetMerchantsMaterial(ctx, req)
 	if retCode != code.Success {
-		if retCode == code.UserExist {
-			result.Common.Code = users.RetCode_USER_EXIST
-			result.Common.Msg = errcode.GetErrMsg(code.UserExist)
-		} else if retCode == code.UserNotExist {
+		switch retCode {
+		case code.UserNotExist:
 			result.Common.Code = users.RetCode_USER_NOT_EXIST
 			result.Common.Msg = errcode.GetErrMsg(code.UserNotExist)
-		} else if retCode == code.MerchantNotExist {
+		case code.MerchantNotExist:
 			result.Common.Code = users.RetCode_MERCHANT_NOT_EXIST
 			result.Common.Msg = errcode.GetErrMsg(code.MerchantNotExist)
-		} else if retCode == code.MerchantExist {
-			result.Common.Code = users.RetCode_MERCHANT_EXIST
-			result.Common.Msg = errcode.GetErrMsg(code.MerchantExist)
-		} else {
+		default:
 			result.Common.Code = users.RetCode_ERROR
 			result.Common.Msg = errcode.GetErrMsg(code.ErrorServer)
 		}

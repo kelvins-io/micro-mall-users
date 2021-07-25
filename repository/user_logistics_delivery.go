@@ -22,9 +22,12 @@ func CheckUserLogisticsDelivery(uid int64, ids []int32) ([]mysql.UserLogisticsDe
 	return result, err
 }
 
-func GetUserLogisticsDelivery(sqlSelect string, id int64) (*mysql.UserLogisticsDelivery, error) {
+func GetUserLogisticsDelivery(sqlSelect string, uid, id int64) (*mysql.UserLogisticsDelivery, error) {
 	var model mysql.UserLogisticsDelivery
-	_, err := kelvins.XORM_DBEngine.Table(mysql.TableUserLogisticsDelivery).Select(sqlSelect).Where("id = ?", id).Get(&model)
+	_, err := kelvins.XORM_DBEngine.Table(mysql.TableUserLogisticsDelivery).Select(sqlSelect).
+		Where("id = ?", id).
+		Where("uid = ?", uid).
+		Get(&model)
 	return &model, err
 }
 
