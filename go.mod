@@ -7,8 +7,8 @@ require (
 	gitee.com/kelvins-io/kelvins v1.2.8
 	gitee.com/kelvins-io/service-config v1.0.0 // indirect
 	github.com/RichardKnop/machinery v1.9.1
-	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/dustin/go-humanize v1.0.0 // indirect
+	github.com/golang-jwt/jwt v3.2.1+incompatible
 	github.com/golang/protobuf v1.4.2
 	github.com/gomodule/redigo v2.0.0+incompatible
 	github.com/google/uuid v1.1.1
