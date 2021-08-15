@@ -579,7 +579,7 @@ func UserAccountCharge(ctx context.Context, req *users.UserAccountChargeRequest)
 		accountIdList = append(accountIdList, userInfoList[i].AccountId)
 	}
 	serverName := args.RpcServiceMicroMallPay
-	conn, err := util.GetGrpcClient(serverName)
+	conn, err := util.GetGrpcClient(ctx, serverName)
 	if err != nil {
 		kelvins.ErrLogger.Errorf(ctx, "GetGrpcClient %v err: %v", serverName, err)
 		return code.ErrorServer

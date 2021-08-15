@@ -1,6 +1,10 @@
 [kelvins-server]
-EndPoint = 8080
 IsRecordCallResponse = true
+Environment = "dev"
+
+[kelvins-auth]
+Token = "c9VW6ForlmzdeDkZE2i8"
+TransportSecurity = false
 
 [kelvins-logger]
 RootPath = "./logs"

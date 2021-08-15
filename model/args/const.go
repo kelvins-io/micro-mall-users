@@ -88,4 +88,5 @@ type UserOnlineState struct {
 
 const (
 	RpcServiceMicroMallPay = "micro-mall-pay"
+	RpcServiceMicroMallUsers = "micro-mall-users"
 )
