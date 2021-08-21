@@ -20,7 +20,7 @@ func TestRegister(t *testing.T) {
 	if err != nil {
 		t.Errorf("Conn err: %v", err)
 	}
-	defer conn.Close()
+	//defer conn.Close()
 
 	client := users.NewUsersServiceClient(conn)
 	r := users.GetUserInfoRequest{
@@ -86,7 +86,7 @@ func testUsersServiceGhz(conf ghzReportConf) error {
 
 	return test_tool.ExecuteRPCGhzTest(&test_tool.GhzTestOption{
 		Call:         "users.UsersService." + conf.call,
-		Host:         "localhost:56159",
+		Host:         "localhost:54786",
 		Token:        "c9VW6ForlmzdeDkZE2i8",
 		ReportFormat: test_tool.ReportHTML,
 		Out:          reportFile,

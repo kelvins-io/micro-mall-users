@@ -4,7 +4,7 @@ go 1.13
 
 require (
 	gitee.com/kelvins-io/common v1.1.1
-	gitee.com/kelvins-io/kelvins v1.5.0
+	gitee.com/kelvins-io/kelvins v1.5.1
 	github.com/RichardKnop/machinery v1.9.1
 	github.com/bojand/ghz v0.100.0
 	github.com/golang-jwt/jwt v3.2.1+incompatible

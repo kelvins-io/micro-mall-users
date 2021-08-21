@@ -584,7 +584,7 @@ func UserAccountCharge(ctx context.Context, req *users.UserAccountChargeRequest)
 		kelvins.ErrLogger.Errorf(ctx, "GetGrpcClient %v err: %v", serverName, err)
 		return code.ErrorServer
 	}
-	defer conn.Close()
+	//defer conn.Close()
 	payClient := pay_business.NewPayBusinessServiceClient(conn)
 	payReq := &pay_business.AccountChargeRequest{
 		Owner:       accountIdList,
