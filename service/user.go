@@ -68,7 +68,7 @@ func RegisterUser(ctx context.Context, req *users.RegisterRequest) (args.Registe
 	err = repository.CreateUser(tx, &user)
 	if err != nil {
 		tx.Rollback()
-		kelvins.ErrLogger.Errorf(ctx, "CreateUser err: %v, user: %+v", err, user)
+		kelvins.ErrLogger.Errorf(ctx, "CreateUser err: %v, user: %v", err, json.MarshalToStringNoError(user))
 		if strings.Contains(err.Error(), code.GetMsg(code.DBDuplicateEntry)) {
 			return result, code.UserExist
 		}
@@ -95,7 +95,7 @@ func RegisterUser(ctx context.Context, req *users.RegisterRequest) (args.Registe
 	_, ret = pushNoticeService.PushMessage(ctx, businessMsg)
 	if ret != code.Success {
 		tx.Rollback()
-		kelvins.ErrLogger.Errorf(ctx, "PushMessage register req: %+v, err: %v", businessMsg, code.GetMsg(ret))
+		kelvins.ErrLogger.Errorf(ctx, "PushMessage register req: %v, err: %v", json.MarshalToStringNoError(businessMsg), code.GetMsg(ret))
 		return result, code.ErrorServer
 	}
 	tx.Commit()
@@ -115,7 +115,7 @@ func LoginUser(ctx context.Context, req *users.LoginUserRequest) (string, int) {
 		loginInfo := req.GetVerifyCode()
 		userDB, err := repository.GetUserByPhone(sqlSelectLoginUser, loginInfo.GetPhone().GetCountryCode(), loginInfo.GetPhone().GetPhone())
 		if err != nil {
-			kelvins.ErrLogger.Errorf(ctx, "GetUserByPhone err: %v, req: %+v", err, req)
+			kelvins.ErrLogger.Errorf(ctx, "GetUserByPhone err: %v, req: %v", err, json.MarshalToStringNoError(req))
 			return result, code.ErrorServer
 		}
 		loginType = "验证码"
@@ -127,7 +127,7 @@ func LoginUser(ctx context.Context, req *users.LoginUserRequest) (string, int) {
 			mobile := loginInfo.GetPhone()
 			userDB, err := repository.GetUserByPhone(sqlSelectLoginUser, mobile.GetCountryCode(), mobile.GetPhone())
 			if err != nil {
-				kelvins.ErrLogger.Errorf(ctx, "GetUserByPhone err: %v, req: %+v", err, req)
+				kelvins.ErrLogger.Errorf(ctx, "GetUserByPhone err: %v, req: %v", err, json.MarshalToStringNoError(req))
 				return result, code.ErrorServer
 			}
 			if userDB.Id <= 0 {
@@ -142,7 +142,7 @@ func LoginUser(ctx context.Context, req *users.LoginUserRequest) (string, int) {
 		case users.LoginPwdKind_EMAIL:
 			userDB, err := repository.GetUserByEmail(sqlSelectLoginUser, loginInfo.GetEmail().GetContent())
 			if err != nil {
-				kelvins.ErrLogger.Errorf(ctx, "GetUserByPhone err: %v, req: %+v", err, req)
+				kelvins.ErrLogger.Errorf(ctx, "GetUserByPhone err: %v, req: %v", err, json.MarshalToStringNoError(req))
 				return result, code.ErrorServer
 			}
 			user = userDB
@@ -156,7 +156,7 @@ func LoginUser(ctx context.Context, req *users.LoginUserRequest) (string, int) {
 	}
 	token, err := util.GenerateToken(user.UserName, user.Id)
 	if err != nil {
-		kelvins.ErrLogger.Errorf(ctx, "GenerateToken err: %v, req: %+v", err, user)
+		kelvins.ErrLogger.Errorf(ctx, "GenerateToken err: %v, req: %v", err, json.MarshalToStringNoError(user))
 		return token, code.ErrorServer
 	}
 	result = token
@@ -171,7 +171,7 @@ func LoginUser(ctx context.Context, req *users.LoginUserRequest) (string, int) {
 		userLoginKey := fmt.Sprintf("%v%d", args.CacheKeyUserSate, user.Id)
 		err := cache.Set(kelvins.RedisConn, userLoginKey, json.MarshalToStringNoError(state), 7200)
 		if err != nil {
-			kelvins.ErrLogger.Errorf(ctx, "setUserState err: %v, userLoginKey: %+v", err, userLoginKey)
+			kelvins.ErrLogger.Errorf(ctx, "setUserState err: %v, userLoginKey: %v", err, userLoginKey)
 		}
 
 		// 发送登录邮件
@@ -192,7 +192,7 @@ func LoginUser(ctx context.Context, req *users.LoginUserRequest) (string, int) {
 func CheckUserIdentity(ctx context.Context, req *users.CheckUserIdentityRequest) int {
 	userDB, err := repository.GetUserByPhone("password,password_salt", req.GetCountryCode(), req.GetPhone())
 	if err != nil {
-		kelvins.ErrLogger.Errorf(ctx, "GetUserByPhone err: %v, req: %+v", err, req)
+		kelvins.ErrLogger.Errorf(ctx, "GetUserByPhone err: %v, req: %v", err, json.MarshalToStringNoError(req))
 		return code.ErrorServer
 	}
 	if userDB.Id <= 0 {
@@ -247,7 +247,7 @@ func PasswordReset(ctx context.Context, req *users.PasswordResetRequest) int {
 		}
 		_, retCode := pushNoticeService.PushMessage(ctx, businessMsg)
 		if retCode != code.Success {
-			kelvins.ErrLogger.Errorf(ctx, "Password Reset businessMsg: %+v  notice send err: ", businessMsg, code.GetMsg(retCode))
+			kelvins.ErrLogger.Errorf(ctx, "Password Reset businessMsg: %v  notice send err: ", json.MarshalToStringNoError(businessMsg), code.GetMsg(retCode))
 		}
 	}
 	vars.GPool.SendJob(userPwdChangeNotify)
@@ -349,7 +349,7 @@ func ModifyUserDeliveryInfo(ctx context.Context, req *users.ModifyUserDeliveryIn
 				if errCallback != nil {
 					kelvins.ErrLogger.Errorf(ctx, "UpdateUserLogisticsDeliveryByTx Rollback err:%v", errCallback)
 				}
-				kelvins.ErrLogger.Errorf(ctx, "UpdateUserLogisticsDeliveryByTx err: %v, where: %v", err, where)
+				kelvins.ErrLogger.Errorf(ctx, "UpdateUserLogisticsDeliveryByTx err: %v, where: %v", err, json.MarshalToStringNoError(where))
 				return code.ErrorServer
 			}
 			if rowAffected <= 0 {
@@ -366,7 +366,7 @@ func ModifyUserDeliveryInfo(ctx context.Context, req *users.ModifyUserDeliveryIn
 				if errCallback != nil {
 					kelvins.ErrLogger.Errorf(ctx, "CreateUserLogisticsDeliveryByTx Rollback err:%v", errCallback)
 				}
-				kelvins.ErrLogger.Errorf(ctx, "CreateUserLogisticsDeliveryByTx err: %v, deliveryInfo: %v", err, deliveryInfo)
+				kelvins.ErrLogger.Errorf(ctx, "CreateUserLogisticsDeliveryByTx err: %v, deliveryInfo: %v", err, json.MarshalToStringNoError(deliveryInfo))
 				return code.ErrorServer
 			}
 			err = tx.Commit()
@@ -378,7 +378,7 @@ func ModifyUserDeliveryInfo(ctx context.Context, req *users.ModifyUserDeliveryIn
 		}
 		err := repository.CreateUserLogisticsDelivery(deliveryInfo)
 		if err != nil {
-			kelvins.ErrLogger.Errorf(ctx, "CreateUserLogisticsDelivery err: %v, deliveryInfo: %v", err, deliveryInfo)
+			kelvins.ErrLogger.Errorf(ctx, "CreateUserLogisticsDelivery err: %v, deliveryInfo: %v", err, json.MarshalToStringNoError(deliveryInfo))
 			return code.ErrorServer
 		}
 		return code.Success
@@ -424,7 +424,7 @@ func ModifyUserDeliveryInfo(ctx context.Context, req *users.ModifyUserDeliveryIn
 				if errCallback != nil {
 					kelvins.ErrLogger.Errorf(ctx, "UpdateUserLogisticsDeliveryByTx Rollback err:%v", errCallback)
 				}
-				kelvins.ErrLogger.Errorf(ctx, "UpdateUserLogisticsDeliveryByTx err: %v, where: %v", err, where)
+				kelvins.ErrLogger.Errorf(ctx, "UpdateUserLogisticsDeliveryByTx err: %v, where: %v", err, json.MarshalToStringNoError(where))
 				return code.ErrorServer
 			}
 			if rowAffected <= 0 {
@@ -440,7 +440,7 @@ func ModifyUserDeliveryInfo(ctx context.Context, req *users.ModifyUserDeliveryIn
 			}
 			rowsAffected, err := repository.UpdateUserLogisticsDeliveryByTx(tx, where2, deliveryInfo)
 			if err != nil {
-				kelvins.ErrLogger.Errorf(ctx, "UpdateUserLogisticsDeliveryByTx err: %v,id: %v, deliveryInfo: %v", err, req.Info.Id, deliveryInfo)
+				kelvins.ErrLogger.Errorf(ctx, "UpdateUserLogisticsDeliveryByTx err: %v,id: %v, deliveryInfo: %v", err, req.Info.Id, json.MarshalToStringNoError(deliveryInfo))
 				return code.ErrorServer
 			}
 			if rowsAffected != 1 {
@@ -462,7 +462,7 @@ func ModifyUserDeliveryInfo(ctx context.Context, req *users.ModifyUserDeliveryIn
 		}
 		rowsAffected, err := repository.UpdateUserLogisticsDelivery(where, deliveryInfo)
 		if err != nil {
-			kelvins.ErrLogger.Errorf(ctx, "UpdateUserLogisticsDelivery err: %v,id: %v, deliveryInfo: %v", err, req.Info.Id, deliveryInfo)
+			kelvins.ErrLogger.Errorf(ctx, "UpdateUserLogisticsDelivery err: %v,id: %v, deliveryInfo: %v", err, req.Info.Id, json.MarshalToStringNoError(deliveryInfo))
 			return code.ErrorServer
 		}
 		if rowsAffected != 1 {
@@ -605,7 +605,7 @@ func UserAccountCharge(ctx context.Context, req *users.UserAccountChargeRequest)
 		return code.ErrorServer
 	}
 	if payRsp.Common.Code != pay_business.RetCode_SUCCESS {
-		kelvins.ErrLogger.Errorf(ctx, "AccountCharge req: %+v, rsp: %+v", payReq, payRsp)
+		kelvins.ErrLogger.Errorf(ctx, "AccountCharge req: %v, rsp: %v", json.MarshalToStringNoError(payReq), json.MarshalToStringNoError(payRsp))
 		switch payRsp.Common.Code {
 		case pay_business.RetCode_USER_ACCOUNT_NOT_EXIST:
 			retCode = code.AccountNotExist
@@ -656,7 +656,7 @@ func CheckUserDeliveryInfo(ctx context.Context, req *users.CheckUserDeliveryInfo
 	retCode = code.Success
 	infoList, err := repository.CheckUserLogisticsDelivery(req.Uid, req.DeliveryIds)
 	if err != nil {
-		kelvins.ErrLogger.Errorf(ctx, "AccountCharge err: %v, req: %+v", err, req)
+		kelvins.ErrLogger.Errorf(ctx, "AccountCharge err: %v, req: %v", err, json.MarshalToStringNoError(req))
 		retCode = code.ErrorServer
 		return
 	}
@@ -671,7 +671,7 @@ func CheckUserState(ctx context.Context, req *users.CheckUserStateRequest) (retC
 	retCode = code.Success
 	infoList, err := repository.FindUserInfo("id,state", req.GetUidList())
 	if err != nil {
-		kelvins.ErrLogger.Errorf(ctx, "AccountCharge err: %v, req: %+v", err, req)
+		kelvins.ErrLogger.Errorf(ctx, "AccountCharge err: %v, req: %v", err, json.MarshalToStringNoError(req))
 		retCode = code.ErrorServer
 		return
 	}
@@ -701,7 +701,7 @@ func GetUserAccountId(ctx context.Context, req *users.GetUserAccountIdRequest) (
 	userList, err := repository.FindUserInfo("id,account_id", req.GetUidList())
 	result = make([]*users.UserAccountInfo, len(userList))
 	if err != nil {
-		kelvins.ErrLogger.Errorf(ctx, "FindUserInfo err: %v, req: %+v", err, req)
+		kelvins.ErrLogger.Errorf(ctx, "FindUserInfo err: %v, req: %v", err, json.MarshalToStringNoError(req))
 		retCode = code.ErrorServer
 		return
 	}
@@ -732,7 +732,7 @@ func ListUserInfo(ctx context.Context, req *users.ListUserInfoRequest) (result [
 	result = make([]*users.MobilePhone, 0)
 	userInfoList, err := repository.ListUserInfo("country_code,phone", int(req.PageMeta.PageSize), int(req.PageMeta.PageNum))
 	if err != nil {
-		kelvins.ErrLogger.Errorf(ctx, "ListUserInfo err: %v, req: %+v", err, req)
+		kelvins.ErrLogger.Errorf(ctx, "ListUserInfo err: %v, req: %v", err, json.MarshalToStringNoError(req))
 		retCode = code.ErrorServer
 		return
 	}

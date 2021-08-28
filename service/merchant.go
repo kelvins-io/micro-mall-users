@@ -11,6 +11,7 @@ import (
 	"gitee.com/cristiane/micro-mall-users/repository"
 	"gitee.com/cristiane/micro-mall-users/vars"
 	"gitee.com/kelvins-io/common/errcode"
+	"gitee.com/kelvins-io/common/json"
 	"gitee.com/kelvins-io/kelvins"
 	"github.com/google/uuid"
 	"strings"
@@ -21,7 +22,7 @@ func MerchantsMaterial(ctx context.Context, req *users.MerchantsMaterialRequest)
 	var merchantId int
 	exist, err := repository.CheckUserExistById(int(req.Info.Uid))
 	if err != nil {
-		kelvins.ErrLogger.Errorf(ctx, "CheckUserExistById err: %v,req : %+v", err, req)
+		kelvins.ErrLogger.Errorf(ctx, "CheckUserExistById err: %v,req : %v", err, json.MarshalToStringNoError(req))
 		return merchantId, code.ErrorServer
 	}
 	if !exist {
@@ -45,12 +46,12 @@ func MerchantsMaterial(ctx context.Context, req *users.MerchantsMaterialRequest)
 			if strings.Contains(err.Error(), errcode.GetErrMsg(code.DBDuplicateEntry)) {
 				return merchantId, code.MerchantExist
 			}
-			kelvins.ErrLogger.Errorf(ctx, "CreateMerchantsMaterial err: %v,merchantMaterial : %+v", err, merchantMaterial)
+			kelvins.ErrLogger.Errorf(ctx, "CreateMerchantsMaterial err: %v,merchantMaterial:%v", err, json.MarshalToStringNoError(merchantMaterial))
 			return merchantId, code.ErrorServer
 		}
 		record, err := repository.GetMerchantIdByUid(int(req.Info.Uid))
 		if err != nil {
-			kelvins.ErrLogger.Errorf(ctx, "GetMerchantsMaterialByUid err: %v,uid : %+v", err, req.Info.Uid)
+			kelvins.ErrLogger.Errorf(ctx, "GetMerchantsMaterialByUid err: %v,uid : %v", err, req.Info.Uid)
 			return merchantId, code.ErrorServer
 		}
 		merchantId = record.MerchantId
