@@ -56,7 +56,7 @@ func MerchantsMaterial(ctx context.Context, req *users.MerchantsMaterialRequest)
 		}
 		merchantId = record.MerchantId
 
-		vars.GPool.SendJob(func() {
+		kelvins.GPool.SendJob(func() {
 			u, ret := GetUserInfo(ctx, int(req.Info.Uid))
 			if ret == code.Success {
 				emailNotice := fmt.Sprintf(args.UserApplyMerchantTemplate, u.UserName, time.Now(), req.Info.RegisterAddr)
@@ -89,7 +89,7 @@ func MerchantsMaterial(ctx context.Context, req *users.MerchantsMaterialRequest)
 			return merchantId, code.ErrorServer
 		}
 
-		vars.GPool.SendJob(func() {
+		kelvins.GPool.SendJob(func() {
 			u, ret := GetUserInfo(ctx, int(req.Info.Uid))
 			if ret == code.Success {
 				emailNotice := fmt.Sprintf(args.UserModifyMerchantInfoTemplate, u.UserName, time.Now())

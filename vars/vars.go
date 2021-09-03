@@ -1,7 +1,6 @@
 package vars
 
 import (
-	"gitee.com/cristiane/micro-mall-users/pkg/util/goroutine"
 	"gitee.com/kelvins-io/common/queue"
 	"gitee.com/kelvins-io/kelvins"
 	"gitee.com/kelvins-io/kelvins/config/setting"
@@ -16,5 +15,4 @@ var (
 	QueueAMQPSettingUserStateNotice    *setting.QueueAMQPSettingS
 	QueueServerUserStateNotice         *queue.MachineryQueue
 	EmailNoticeSetting                 *EmailNoticeSettingS
-	GPool                              *goroutine.Pool
 )

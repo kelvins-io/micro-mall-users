@@ -32,6 +32,10 @@ Password = "xxx"
 DB = 1
 PoolNum = 10
 
+[kelvins-gpool]
+WorkerNum = 10
+JobChanLen = 1000
+
 [queue-user-register-notice]
 Broker = "amqp://micro-mall:szJ9aePR@localhost:5672/micro-mall"
 DefaultQueue = "user_register_notice"

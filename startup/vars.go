@@ -1,8 +1,6 @@
 package startup
 
 import (
-
-	"gitee.com/cristiane/micro-mall-users/pkg/util/goroutine"
 	"gitee.com/cristiane/micro-mall-users/vars"
 	"gitee.com/kelvins-io/kelvins/setup"
 )
@@ -23,7 +21,5 @@ func SetupVars() error {
 			return err
 		}
 	}
-
-	vars.GPool = goroutine.NewPool(20,100)
 	return nil
 }

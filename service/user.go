@@ -184,7 +184,7 @@ func LoginUser(ctx context.Context, req *users.LoginUserRequest) (string, int) {
 			}
 		}
 	}
-	vars.GPool.SendJob(updateUserState)
+	kelvins.GPool.SendJob(updateUserState)
 
 	return result, retCode
 }
@@ -250,7 +250,7 @@ func PasswordReset(ctx context.Context, req *users.PasswordResetRequest) int {
 			kelvins.ErrLogger.Errorf(ctx, "Password Reset businessMsg: %v  notice send err: ", json.MarshalToStringNoError(businessMsg), code.GetMsg(retCode))
 		}
 	}
-	vars.GPool.SendJob(userPwdChangeNotify)
+	kelvins.GPool.SendJob(userPwdChangeNotify)
 
 	return code.Success
 }
@@ -627,7 +627,7 @@ func UserAccountCharge(ctx context.Context, req *users.UserAccountChargeRequest)
 		return
 	}
 
-	vars.GPool.SendJob(func() {
+	kelvins.GPool.SendJob(func() {
 		// 发送登录邮件
 		var un strings.Builder
 		for _, v := range userInfoList {
