@@ -3,7 +3,7 @@ package cache
 import (
 	"crypto/md5"
 	"fmt"
-	"gitee.com/cristiane/micro-mall-users/vars"
+	"gitee.com/kelvins-io/kelvins"
 	"github.com/gomodule/redigo/redis"
 )
 
@@ -89,5 +89,5 @@ func buildRedisKey(key string) string {
 		key = fmt.Sprintf("%x", m.Sum(nil))
 	}
 
-	return vars.App.Name + "-" + key
+	return kelvins.AppName + "-" + key
 }

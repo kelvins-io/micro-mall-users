@@ -2,12 +2,10 @@ package vars
 
 import (
 	"gitee.com/kelvins-io/common/queue"
-	"gitee.com/kelvins-io/kelvins"
 	"gitee.com/kelvins-io/kelvins/config/setting"
 )
 
 var (
-	App                                *kelvins.GRPCApplication
 	EmailConfigSetting                 *EmailConfigSettingS
 	JwtSetting                         *JwtSettingS
 	QueueAMQPSettingUserRegisterNotice *setting.QueueAMQPSettingS

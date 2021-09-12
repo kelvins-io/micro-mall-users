@@ -2,7 +2,6 @@ package main
 
 import (
 	"gitee.com/cristiane/micro-mall-users/startup"
-	"gitee.com/cristiane/micro-mall-users/vars"
 	"gitee.com/kelvins-io/kelvins"
 	"gitee.com/kelvins-io/kelvins/app"
 )
@@ -22,6 +21,5 @@ func main() {
 		RegisterGateway:      startup.RegisterGateway,
 		RegisterHttpRoute:    startup.RegisterHttpRoute,
 	}
-	vars.App = application
 	app.RunGRPCApplication(application)
 }

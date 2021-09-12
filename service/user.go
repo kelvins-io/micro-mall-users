@@ -177,7 +177,7 @@ func LoginUser(ctx context.Context, req *users.LoginUserRequest) (string, int) {
 		// 发送登录邮件
 		emailNotice := fmt.Sprintf(args.UserLoginTemplate, user.UserName, time.Now().String(), loginType)
 		for _, receiver := range vars.EmailNoticeSetting.Receivers {
-			err = email.SendEmailNotice(ctx, receiver, vars.App.Name, emailNotice)
+			err = email.SendEmailNotice(ctx, receiver, kelvins.AppName, emailNotice)
 			if err != nil {
 				kelvins.ErrLogger.Info(ctx, "SendEmailNotice err, emailNotice: %v", emailNotice)
 				return
@@ -641,7 +641,7 @@ func UserAccountCharge(ctx context.Context, req *users.UserAccountChargeRequest)
 		}
 		emailNotice := fmt.Sprintf(args.UserAccountChargeTemplate, un.String(), time.Now(), req.Amount, coin)
 		for _, receiver := range vars.EmailNoticeSetting.Receivers {
-			err = email.SendEmailNotice(ctx, receiver, vars.App.Name, emailNotice)
+			err = email.SendEmailNotice(ctx, receiver, kelvins.AppName, emailNotice)
 			if err != nil {
 				kelvins.ErrLogger.Info(ctx, "SendEmailNotice err, emailNotice: %v", emailNotice)
 				return
