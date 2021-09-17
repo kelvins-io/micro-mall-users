@@ -7,7 +7,6 @@ import (
 
 var (
 	EmailConfigSetting                 *EmailConfigSettingS
-	JwtSetting                         *JwtSettingS
 	QueueAMQPSettingUserRegisterNotice *setting.QueueAMQPSettingS
 	QueueServerUserRegisterNotice      *queue.MachineryQueue
 	QueueAMQPSettingUserStateNotice    *setting.QueueAMQPSettingS

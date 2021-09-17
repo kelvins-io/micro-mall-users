@@ -6,7 +6,7 @@ import (
 	"xorm.io/xorm"
 )
 
-func CreateUser(tx *xorm.Session,user *mysql.User) (err error) {
+func CreateUser(tx *xorm.Session, user *mysql.User) (err error) {
 	_, err = tx.Table(mysql.TableUser).Insert(user)
 	return
 }

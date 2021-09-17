@@ -1,7 +1,7 @@
 package util
 
 import (
-	"gitee.com/cristiane/micro-mall-users/vars"
+	"gitee.com/kelvins-io/kelvins"
 	"github.com/golang-jwt/jwt"
 	"time"
 )
@@ -19,12 +19,12 @@ type Claims struct {
 
 func GenerateToken(username string, uid int) (string, error) {
 	var expire = jwtExpireTime
-	if vars.JwtSetting.TokenExpireSecond > 0 {
-		expire = time.Duration(vars.JwtSetting.TokenExpireSecond) * time.Second
+	if kelvins.JwtSetting.TokenExpireSecond > 0 {
+		expire = time.Duration(kelvins.JwtSetting.TokenExpireSecond) * time.Second
 	}
 	var secret = jwtSecret
-	if vars.JwtSetting.Secret != "" {
-		secret = vars.JwtSetting.Secret
+	if kelvins.JwtSetting.Secret != "" {
+		secret = kelvins.JwtSetting.Secret
 	}
 	nowTime := time.Now()
 	expireTime := nowTime.Add(expire)
@@ -44,8 +44,8 @@ func GenerateToken(username string, uid int) (string, error) {
 
 func ParseToken(token string) (*Claims, error) {
 	var secret = jwtSecret
-	if vars.JwtSetting.Secret != "" {
-		secret = vars.JwtSetting.Secret
+	if kelvins.JwtSetting.Secret != "" {
+		secret = kelvins.JwtSetting.Secret
 	}
 	tokenClaims, err := jwt.ParseWithClaims(token, &Claims{}, func(token *jwt.Token) (i interface{}, err error) {
 		return []byte(secret), nil

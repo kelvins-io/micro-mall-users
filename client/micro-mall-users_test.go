@@ -77,7 +77,7 @@ func testUsersServiceGhz(conf ghzReportConf) error {
 	}
 	var opts []runner.Option
 	opts = append(opts,
-		runner.WithProtoFile(gopath+"/src/gitee.com/cristiane/micro-mall-users-proto/users/users.proto", []string{gopath + "/src/",}),
+		runner.WithProtoFile(gopath+"/src/gitee.com/cristiane/micro-mall-users-proto/users/users.proto", []string{gopath + "/src/"}),
 		runner.WithConcurrency(200),
 		runner.WithConnections(5),
 		runner.WithDataFromJSON(conf.dataJson),

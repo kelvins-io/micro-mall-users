@@ -4,11 +4,11 @@ go 1.13
 
 require (
 	gitee.com/kelvins-io/common v1.1.4
-	gitee.com/kelvins-io/kelvins v1.5.8
+	gitee.com/kelvins-io/kelvins v1.5.9
 	github.com/DATA-DOG/godog v0.7.13 // indirect
 	github.com/RichardKnop/machinery v1.10.6
 	github.com/bojand/ghz v0.100.0
-	github.com/golang-jwt/jwt v3.2.1+incompatible
+	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/golang/protobuf v1.5.2
 	github.com/gomodule/redigo v2.0.0+incompatible
 	github.com/google/uuid v1.2.0

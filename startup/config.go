@@ -10,7 +10,6 @@ const (
 	SectionEmailConfig             = "email-config"
 	SectionQueueUserRegisterNotice = "queue-user-register-notice"
 	SectionQueueUserStateNotice    = "queue-user-state-notice"
-	SectionJwt                     = "kelvins-jwt"
 	EmailNotice                    = "email-notice"
 )
 
@@ -28,8 +27,5 @@ func LoadConfig() error {
 	// 用户事件通知
 	vars.QueueAMQPSettingUserStateNotice = new(setting.QueueAMQPSettingS)
 	config.MapConfig(SectionQueueUserStateNotice, vars.QueueAMQPSettingUserStateNotice)
-	// 用户认证token
-	vars.JwtSetting = new(vars.JwtSettingS)
-	config.MapConfig(SectionJwt, vars.JwtSetting)
 	return nil
 }
