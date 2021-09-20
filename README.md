@@ -76,6 +76,7 @@ TaskRetryCount = 3
 TaskRetryTimeout = 3600
 
 [email-config]
+Enable = false
 User = "xxx@qq.com"
 Password = "xx"
 Host = "smtp.qq.com"

@@ -39,10 +39,10 @@ func RegisterHttpRoute(serverMux *http.ServeMux) error {
 }
 
 const (
-	healthCheckSleep = 3 * time.Second
+	healthCheckSleep = 10 * time.Second
 )
 
-func RegisterGRPCHealthCheck(health *kelvins.GRPCHealthServer) {
+func RegisterGRPCHealthStatusHandle(health *kelvins.GRPCHealthServer) {
 	// first set
 	health.SetServingStatus("", healthpb.HealthCheckResponse_SERVING)
 	health.SetServingStatus("users.UsersService", healthpb.HealthCheckResponse_SERVING)

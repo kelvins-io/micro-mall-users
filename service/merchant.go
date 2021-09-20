@@ -60,11 +60,13 @@ func MerchantsMaterial(ctx context.Context, req *users.MerchantsMaterialRequest)
 			u, ret := GetUserInfo(ctx, int(req.Info.Uid))
 			if ret == code.Success {
 				emailNotice := fmt.Sprintf(args.UserApplyMerchantTemplate, u.UserName, time.Now(), req.Info.RegisterAddr)
-				for _, receiver := range vars.EmailNoticeSetting.Receivers {
-					err = email.SendEmailNotice(ctx, receiver, kelvins.AppName, emailNotice)
-					if err != nil {
-						kelvins.ErrLogger.Info(ctx, "SendEmailNotice err, emailNotice: %v", emailNotice)
-						return
+				if vars.EmailNoticeSetting != nil && vars.EmailNoticeSetting.Receivers != nil {
+					for _, receiver := range vars.EmailNoticeSetting.Receivers {
+						err = email.SendEmailNotice(ctx, receiver, kelvins.AppName, emailNotice)
+						if err != nil {
+							kelvins.ErrLogger.Info(ctx, "SendEmailNotice err, emailNotice: %v", emailNotice)
+							return
+						}
 					}
 				}
 			}
@@ -93,11 +95,13 @@ func MerchantsMaterial(ctx context.Context, req *users.MerchantsMaterialRequest)
 			u, ret := GetUserInfo(ctx, int(req.Info.Uid))
 			if ret == code.Success {
 				emailNotice := fmt.Sprintf(args.UserModifyMerchantInfoTemplate, u.UserName, time.Now())
-				for _, receiver := range vars.EmailNoticeSetting.Receivers {
-					err = email.SendEmailNotice(ctx, receiver, kelvins.AppName, emailNotice)
-					if err != nil {
-						kelvins.ErrLogger.Info(ctx, "SendEmailNotice err, emailNotice: %v", emailNotice)
-						return
+				if vars.EmailNoticeSetting != nil && vars.EmailNoticeSetting.Receivers != nil {
+					for _, receiver := range vars.EmailNoticeSetting.Receivers {
+						err = email.SendEmailNotice(ctx, receiver, kelvins.AppName, emailNotice)
+						if err != nil {
+							kelvins.ErrLogger.Info(ctx, "SendEmailNotice err, emailNotice: %v", emailNotice)
+							return
+						}
 					}
 				}
 			}
