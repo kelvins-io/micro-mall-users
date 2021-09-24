@@ -16,7 +16,7 @@ func main() {
 			Name:       APP_NAME,
 		},
 		NumServerWorkers:     20,
-		RegisterHealthServer: startup.RegisterGRPCHealthStatusHandle,
+		RegisterGRPCHealthHandle: startup.RegisterGRPCHealthStatusHandle,
 		RegisterGRPCServer:   startup.RegisterGRPCServer,
 		RegisterGateway:      startup.RegisterGateway,
 		RegisterHttpRoute:    startup.RegisterHttpRoute,

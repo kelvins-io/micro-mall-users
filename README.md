@@ -15,6 +15,10 @@ g2cache缓存库支持（两级缓存）：https://gitee.com/kelvins-io/g2cache
 2 运行  sh build-run.sh   
 3 停止 sh stop.sh
 
+#### RPC接口压测报告
+使用ghz压测接口   
+![avatar](./ghz压测RPC接口.png)
+
 #### 使用说明
 配置参考
 ```toml
@@ -28,6 +32,7 @@ Level = "debug"
 [kelvins-auth]
 Token = "c9VW6ForlmzdeDkZE2i8"
 TransportSecurity = false
+ExpireSecond = 100
 
 [kelvins-mysql]
 Host = "127.0.0.1:3306"

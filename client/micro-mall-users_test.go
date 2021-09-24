@@ -24,7 +24,7 @@ func TestRegister(t *testing.T) {
 
 	client := users.NewUsersServiceClient(conn)
 	r := users.GetUserInfoRequest{
-		Uid: 10009,
+		Uid: 10053,
 	}
 	accountInfo, err := client.GetUserInfo(ctx, &r)
 	if err != nil {
@@ -86,7 +86,7 @@ func testUsersServiceGhz(conf ghzReportConf) error {
 
 	return test_tool.ExecuteRPCGhzTest(&test_tool.GhzTestOption{
 		Call:         "users.UsersService." + conf.call,
-		Host:         "localhost:54786",
+		Host:         "localhost:56995",
 		Token:        "c9VW6ForlmzdeDkZE2i8",
 		ReportFormat: test_tool.ReportHTML,
 		Out:          reportFile,

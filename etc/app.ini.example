@@ -4,6 +4,7 @@ Environment = "dev"
 [kelvins-rpc-auth]
 Token = "c9VW6ForlmzdeDkZE2i8"
 TransportSecurity = false
+ExpireSecond = 100
 
 [kelvins-rpc-server]
 NumServerWorkers = 6
