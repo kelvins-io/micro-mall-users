@@ -20,6 +20,9 @@ const (
 
 	TaskNameUserStateNotice    = "task_user_state_notice"
 	TaskNameUserStateNoticeErr = "task_user_state_notice_err"
+
+	UserInfoSearchNotice    = "user_info_search_notice"
+	UserInfoSearchNoticeErr = "user_info_search_notice_err"
 )
 
 const (
@@ -34,14 +37,16 @@ const (
 )
 
 var MsgFlags = map[int]string{
-	Unknown:                     "未知",
-	VerifyCodeRegister:          "注册",
-	VerifyCodeLogin:             "登录",
-	VerifyCodePassword:          "修改/重置密码",
-	UserStateEventTypeRegister:  "注册",
-	UserStateEventTypePwdModify: "修改密码",
-	UserStateEventTypeLogin:     "登录上线",
-	UserStateEventTypeLogout:    "退出登录",
+	Unknown:                         "未知",
+	VerifyCodeRegister:              "注册",
+	VerifyCodeLogin:                 "登录",
+	VerifyCodePassword:              "修改/重置密码",
+	UserStateEventTypeRegister:      "注册",
+	UserStateEventTypePwdModify:     "修改密码",
+	UserStateEventTypeLogin:         "登录上线",
+	UserStateEventTypeLogout:        "退出登录",
+	UserInfoSearchNoticeType:        "用户注册/更新信息",
+	MerchantsMaterialInfoNoticeType: "商户申请通知",
 }
 
 func GetMsg(code int) string {
@@ -56,17 +61,36 @@ const (
 	CacheKeyUserSate = "user_state_"
 )
 const (
-	UserStateEventTypeRegister  = 10010
-	UserStateEventTypeLogin     = 10011
-	UserStateEventTypeLogout    = 10012
-	UserStateEventTypePwdModify = 10013
+	UserStateEventTypeRegister      = 10010
+	UserStateEventTypeLogin         = 10011
+	UserStateEventTypeLogout        = 10012
+	UserStateEventTypePwdModify     = 10013
+	UserInfoSearchNoticeType        = 10014
+	MerchantsMaterialInfoNoticeType = 10015
 )
 
+type UserInfoSearch struct {
+	UserName    string `json:"user_name"`
+	Phone       string `json:"phone"`
+	Email       string `json:"email"`
+	IdCardNo    string `json:"id_card_no"`
+	ContactAddr string `json:"contact_addr"`
+}
+
+type MerchantInfoSearch struct {
+	Uid          int64  `json:"uid"`
+	UserName     string `json:"user_name"`
+	MerchantCode string `json:"merchant_code"`
+	RegisterAddr string `json:"register_addr"`
+	HealthCardNo string `json:"health_card_no"`
+	TaxCardNo    string `json:"tax_card_no"`
+}
+
 type CommonBusinessMsg struct {
-	Type int    `json:"type"`
-	Tag  string `json:"tag"`
-	UUID string `json:"uuid"`
-	Msg  string `json:"msg"`
+	Type    int    `json:"type"`
+	Tag     string `json:"tag"`
+	UUID    string `json:"uuid"`
+	Content string `json:"content"`
 }
 
 type UserRegisterNotice struct {
@@ -75,6 +99,7 @@ type UserRegisterNotice struct {
 	Time        string `json:"time"`
 	State       int    `json:"state"`
 }
+
 type UserStateNotice struct {
 	Uid  int    `json:"uid"`
 	Time string `json:"time"`
@@ -87,6 +112,7 @@ type UserOnlineState struct {
 }
 
 const (
-	RpcServiceMicroMallPay   = "micro-mall-pay"
-	RpcServiceMicroMallUsers = "micro-mall-users"
+	RpcServiceMicroMallPay    = "micro-mall-pay"
+	RpcServiceMicroMallUsers  = "micro-mall-users"
+	RpcServiceMicroMallSearch = "micro-mall-search"
 )

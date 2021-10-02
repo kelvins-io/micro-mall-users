@@ -17,6 +17,12 @@ func FindUserInfo(sqlSelect string, uidList []int64) ([]mysql.User, error) {
 	return result, err
 }
 
+func FindUserInfoByPhone(sqlSelect string, countryCode []string, phone []string) ([]*mysql.User, error) {
+	var result = make([]*mysql.User, 0)
+	err := kelvins.XORM_DBEngine.Table(mysql.TableUser).Select(sqlSelect).In("country_code", countryCode).In("phone", phone).Find(&result)
+	return result, err
+}
+
 func GetUserByUid(uid int) (*mysql.User, error) {
 	var user mysql.User
 	var err error

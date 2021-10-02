@@ -93,3 +93,16 @@ func (m *MerchantsServer) GetMerchantsMaterial(ctx context.Context, req *users.G
 func (m *MerchantsServer) MerchantsAssociateShop(ctx context.Context, req *users.MerchantsAssociateShopRequest) (*users.MerchantsAssociateShopResponse, error) {
 	return &users.MerchantsAssociateShopResponse{}, nil
 }
+
+func (u *MerchantsServer) SearchMerchantInfo(ctx context.Context, req *users.SearchMerchantInfoRequest) (*users.SearchMerchantInfoResponse, error) {
+	result := &users.SearchMerchantInfoResponse{Common: &users.CommonResponse{
+		Code: users.RetCode_SUCCESS,
+	}}
+	merchantInfoList, retCode := service.SearchMerchantInfo(ctx, req.GetQuery())
+	if retCode != code.Success {
+		result.Common.Code = users.RetCode_ERROR
+		return result, nil
+	}
+	result.List = merchantInfoList
+	return result, nil
+}

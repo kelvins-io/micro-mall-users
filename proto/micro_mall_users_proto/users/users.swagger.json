@@ -454,6 +454,37 @@
         ]
       }
     },
+    "/v1/user/info/search": {
+      "get": {
+        "summary": "搜索用户",
+        "operationId": "UsersService_SearchUserInfo",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/usersSearchUserInfoResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "UsersService"
+        ]
+      }
+    },
     "/v1/user/login": {
       "put": {
         "summary": "登录",
@@ -546,6 +577,37 @@
             "schema": {
               "$ref": "#/definitions/usersMerchantsMaterialAuditRequest"
             }
+          }
+        ],
+        "tags": [
+          "MerchantsService"
+        ]
+      }
+    },
+    "/v1/user/merchants/info/search": {
+      "get": {
+        "summary": "搜索商户",
+        "operationId": "MerchantsService_SearchMerchantInfo",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/usersSearchMerchantInfoResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "query",
+            "in": "query",
+            "required": false,
+            "type": "string"
           }
         ],
         "tags": [
@@ -1347,6 +1409,58 @@
         "USER_STATE_NOT_VERIFY"
       ],
       "default": "SUCCESS"
+    },
+    "usersSearchMerchantInfoResponse": {
+      "type": "object",
+      "properties": {
+        "common": {
+          "$ref": "#/definitions/usersCommonResponse"
+        },
+        "list": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/usersSearchMerchantsInfoEntry"
+          }
+        }
+      }
+    },
+    "usersSearchMerchantsInfoEntry": {
+      "type": "object",
+      "properties": {
+        "info": {
+          "$ref": "#/definitions/usersMerchantsMaterialInfo"
+        },
+        "score": {
+          "type": "number",
+          "format": "double"
+        }
+      }
+    },
+    "usersSearchUserInfoEntry": {
+      "type": "object",
+      "properties": {
+        "info": {
+          "$ref": "#/definitions/usersUserInfo"
+        },
+        "score": {
+          "type": "number",
+          "format": "double"
+        }
+      }
+    },
+    "usersSearchUserInfoResponse": {
+      "type": "object",
+      "properties": {
+        "common": {
+          "$ref": "#/definitions/usersCommonResponse"
+        },
+        "list": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/usersSearchUserInfoEntry"
+          }
+        }
+      }
     },
     "usersUpdateUserLoginStateRequest": {
       "type": "object",

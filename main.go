@@ -15,11 +15,11 @@ func main() {
 			SetupVars:  startup.SetupVars,
 			Name:       APP_NAME,
 		},
-		NumServerWorkers:     20,
+		NumServerWorkers:         20,
 		RegisterGRPCHealthHandle: startup.RegisterGRPCHealthStatusHandle,
-		RegisterGRPCServer:   startup.RegisterGRPCServer,
-		RegisterGateway:      startup.RegisterGateway,
-		RegisterHttpRoute:    startup.RegisterHttpRoute,
+		RegisterGRPCServer:       startup.RegisterGRPCServer,
+		RegisterGateway:          startup.RegisterGateway,
+		RegisterHttpRoute:        startup.RegisterHttpRoute,
 	}
 	app.RunGRPCApplication(application)
 }

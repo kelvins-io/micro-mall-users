@@ -72,6 +72,18 @@ PrefetchCount = 5
 TaskRetryCount = 3
 TaskRetryTimeout = 3600
 
+[user-info-search-notice]
+Broker = "amqp://micro-mall:szJ9aePR@127.0.0.1:5672/micro-mall"
+DefaultQueue = "user_info_search_notice"
+ResultBackend = "redis://xxxx@127.0.0.1:6379/8"
+ResultsExpireIn = 3600
+Exchange = "user_info_search_notice"
+ExchangeType = "direct"
+BindingKey = "user_info_search_notice"
+PrefetchCount = 3
+TaskRetryCount = 3
+TaskRetryTimeout = 3600
+
 [email-config]
 Enable = false
 User = "xxx@qq.com"

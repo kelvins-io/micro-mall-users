@@ -10,6 +10,7 @@ const (
 	SectionEmailConfig             = "email-config"
 	SectionQueueUserRegisterNotice = "queue-user-register-notice"
 	SectionQueueUserStateNotice    = "queue-user-state-notice"
+	UserInfoSearchNotice           = "user-info-search-notice"
 	EmailNotice                    = "email-notice"
 )
 
@@ -27,5 +28,9 @@ func LoadConfig() error {
 	// 用户事件通知
 	vars.QueueAMQPSettingUserStateNotice = new(setting.QueueAMQPSettingS)
 	config.MapConfig(SectionQueueUserStateNotice, vars.QueueAMQPSettingUserStateNotice)
+	// 用户信息入库
+	vars.QueueAMQPSettingUserInfoSearchNotice = new(setting.QueueAMQPSettingS)
+	config.MapConfig(UserInfoSearchNotice, vars.QueueAMQPSettingUserInfoSearchNotice)
+
 	return nil
 }

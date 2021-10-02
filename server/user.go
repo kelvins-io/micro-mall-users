@@ -424,3 +424,16 @@ func (u *UsersServer) ListUserInfo(ctx context.Context, req *users.ListUserInfoR
 	}
 	return result, nil
 }
+
+func (u *UsersServer) SearchUserInfo(ctx context.Context, req *users.SearchUserInfoRequest) (*users.SearchUserInfoResponse, error) {
+	result := &users.SearchUserInfoResponse{Common: &users.CommonResponse{
+		Code: users.RetCode_SUCCESS,
+	}}
+	userInfoList, retCode := service.SearchUserInfo(ctx, req.GetQuery())
+	if retCode != code.Success {
+		result.Common.Code = users.RetCode_ERROR
+		return result, nil
+	}
+	result.List = userInfoList
+	return result, nil
+}

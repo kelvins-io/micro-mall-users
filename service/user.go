@@ -11,6 +11,7 @@ import (
 	"gitee.com/cristiane/micro-mall-users/pkg/util/cache"
 	"gitee.com/cristiane/micro-mall-users/pkg/util/email"
 	"gitee.com/cristiane/micro-mall-users/proto/micro_mall_pay_proto/pay_business"
+	"gitee.com/cristiane/micro-mall-users/proto/micro_mall_search_proto/search_business"
 	"gitee.com/cristiane/micro-mall-users/proto/micro_mall_users_proto/users"
 	"gitee.com/cristiane/micro-mall-users/repository"
 	"gitee.com/cristiane/micro-mall-users/vars"
@@ -18,6 +19,7 @@ import (
 	"gitee.com/kelvins-io/common/json"
 	"gitee.com/kelvins-io/common/password"
 	"gitee.com/kelvins-io/kelvins"
+	"github.com/google/uuid"
 	"strings"
 	"time"
 )
@@ -85,7 +87,7 @@ func RegisterUser(ctx context.Context, req *users.RegisterRequest) (args.Registe
 		Type: args.UserStateEventTypeRegister,
 		Tag:  args.GetMsg(args.UserStateEventTypeRegister),
 		UUID: genUUID(),
-		Msg: json.MarshalToStringNoError(args.UserRegisterNotice{
+		Content: json.MarshalToStringNoError(args.UserRegisterNotice{
 			CountryCode: req.CountryCode,
 			Phone:       req.Phone,
 			Time:        util.ParseTimeOfStr(time.Now().Unix()),
@@ -100,7 +102,30 @@ func RegisterUser(ctx context.Context, req *users.RegisterRequest) (args.Registe
 	}
 	tx.Commit()
 
+	// 通知搜索
+	body := args.UserInfoSearch{
+		UserName:    req.GetUserName(),
+		Phone:       req.GetCountryCode() + ":" + req.GetPhone(),
+		Email:       req.GetEmail(),
+		IdCardNo:    req.GetIdCardNo(),
+		ContactAddr: req.GetContactAddr(),
+	}
+	userInfoSearchNotice(&body)
+
 	return result, code.Success
+}
+
+func userInfoSearchNotice(info *args.UserInfoSearch) {
+	kelvins.GPool.SendJob(func() {
+		var ctx = context.TODO()
+		userInfoMsg := args.CommonBusinessMsg{
+			Type:    args.UserInfoSearchNoticeType,
+			Tag:     args.GetMsg(args.UserInfoSearchNoticeType),
+			UUID:    uuid.New().String(),
+			Content: json.MarshalToStringNoError(info),
+		}
+		vars.QueueServerUserInfoSearchPusher.PushMessage(ctx, &userInfoMsg)
+	})
 }
 
 const sqlSelectLoginUser = "id,user_name,password,password_salt"
@@ -242,7 +267,7 @@ func PasswordReset(ctx context.Context, req *users.PasswordResetRequest) int {
 			Type: args.UserStateEventTypePwdModify,
 			Tag:  args.GetMsg(args.UserStateEventTypePwdModify),
 			UUID: genUUID(),
-			Msg: json.MarshalToStringNoError(args.UserStateNotice{
+			Content: json.MarshalToStringNoError(args.UserStateNotice{
 				Uid:  user.Id,
 				Time: util.ParseTimeOfStr(time.Now().Unix()),
 			}),
@@ -560,6 +585,21 @@ func FindUserInfo(ctx context.Context, req *users.FindUserInfoRequest) (result [
 	return
 }
 
+const sqlSelectFindUserInfoByPhone = "*"
+
+func FindUserInfoByPhone(ctx context.Context, countryCode []string, phone []string) (result []*mysql.User, retCode int) {
+	var err error
+	result = make([]*mysql.User, 0)
+	retCode = code.Success
+	result, err = repository.FindUserInfoByPhone(sqlSelectFindUserInfoByPhone, countryCode, phone)
+	if err != nil {
+		kelvins.ErrLogger.Errorf(ctx, "FindUserInfoByPhone err: %v, countryCode: %v, phone: %v", err, countryCode, phone)
+		retCode = code.ErrorServer
+		return
+	}
+	return result, retCode
+}
+
 func UserAccountCharge(ctx context.Context, req *users.UserAccountChargeRequest) (retCode int) {
 	retCode = code.Success
 	userInfoList, err := repository.FindUserInfo("id,account_id,user_name", req.UidList)
@@ -747,6 +787,80 @@ func ListUserInfo(ctx context.Context, req *users.ListUserInfoRequest) (result [
 			Phone:       userInfoList[i].Phone,
 		}
 		result[i] = info
+	}
+	return
+}
+
+func SearchUserInfo(ctx context.Context, query string) (result []*users.SearchUserInfoEntry, retCode int) {
+	result = make([]*users.SearchUserInfoEntry, 0)
+	retCode = code.Success
+	serverName := args.RpcServiceMicroMallSearch
+	conn, err := util.GetGrpcClient(ctx, serverName)
+	if err != nil {
+		kelvins.ErrLogger.Errorf(ctx, "GetGrpcClient %v err: %v", serverName, err)
+		return result, code.ErrorServer
+	}
+	client := search_business.NewSearchBusinessServiceClient(conn)
+	rsp, err := client.UserSearch(ctx, &search_business.UserSearchRequest{Query: query})
+	if err != nil {
+		kelvins.ErrLogger.Errorf(ctx, "UserSearch err: %v, query: %v", err, query)
+		return result, code.ErrorServer
+	}
+	if rsp.Common.Code != search_business.RetCode_SUCCESS {
+		kelvins.ErrLogger.Errorf(ctx, "UserSearch err: %v, query: %v, rsp: %v", err, query, json.MarshalToStringNoError(rsp))
+		return result, code.ErrorServer
+	}
+	if len(rsp.List) == 0 {
+		return
+	}
+	var userCountryCode = make([]string, 0)
+	var userPhone = make([]string, 0)
+	for i := 0; i < len(rsp.List); i++ {
+		v := rsp.List[i]
+		vv := strings.SplitN(v.GetPhone(), ":", 2)
+		if len(vv) > 0 {
+			userCountryCode = append(userCountryCode, vv[0])
+		}
+		if len(vv) > 1 {
+			userPhone = append(userPhone, vv[1])
+		}
+	}
+	userInfoList, retCode := FindUserInfoByPhone(ctx, userCountryCode, userPhone)
+	if retCode != code.Success {
+		return nil, code.ErrorServer
+	}
+	if len(userInfoList) == 0 {
+		return
+	}
+	phoneToUserInfo := map[string]*mysql.User{}
+	for i := 0; i < len(userInfoList); i++ {
+		key := userInfoList[i].CountryCode + ":" + userInfoList[i].Phone
+		phoneToUserInfo[key] = userInfoList[i]
+	}
+	result = make([]*users.SearchUserInfoEntry, 0)
+	for i := 0; i < len(rsp.List); i++ {
+		userInfo, ok := phoneToUserInfo[rsp.List[i].GetPhone()]
+		if ok {
+			entry := &users.SearchUserInfoEntry{
+				Info: &users.UserInfo{
+					Uid:         int64(userInfo.Id),
+					AccountId:   userInfo.AccountId,
+					UserName:    userInfo.UserName,
+					Sex:         int32(userInfo.Sex),
+					CountryCode: userInfo.CountryCode,
+					Phone:       userInfo.Phone,
+					Email:       userInfo.Email,
+					State:       int32(userInfo.State),
+					IdCardNo:    userInfo.IdCardNo.String,
+					InviterCode: userInfo.InviteCode,
+					ContactAddr: userInfo.ContactAddr,
+					Age:         int32(userInfo.Age),
+					CreateTime:  userInfo.CreateTime.Format(time.RFC3339),
+				},
+				Score: rsp.List[i].Score,
+			}
+			result = append(result, entry)
+		}
 	}
 	return
 }

@@ -51,6 +51,7 @@ type VerifyCodeRecord struct {
 	CreateTime   time.Time `xorm:"'create_time' comment('创建时间') DATETIME"`
 	UpdateTime   time.Time `xorm:"'update_time' comment('修改时间') DATETIME"`
 }
+
 type User struct {
 	Id           int            `xorm:"'id' not null pk autoincr comment('用户id') INT"`
 	AccountId    string         `xorm:"'account_id' not null comment('账户ID，全局唯一') unique CHAR(36)"`

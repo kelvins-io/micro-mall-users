@@ -26,3 +26,9 @@ func GetMerchantsMaterial(merchantId int) (*mysql.Merchant, error) {
 	_, err := kelvins.XORM_DBEngine.Table(mysql.TableMerchantInfo).Where("merchant_id = ?", merchantId).Get(&model)
 	return &model, err
 }
+
+func FindMerchantInfo(sqlSelect string, merchantCode []string) ([]*mysql.Merchant, error) {
+	var result = make([]*mysql.Merchant, 0)
+	err := kelvins.XORM_DBEngine.Table(mysql.TableMerchantInfo).Select(sqlSelect).In("merchant_code", merchantCode).Find(&result)
+	return result, err
+}
