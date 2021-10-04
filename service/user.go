@@ -839,6 +839,9 @@ func SearchUserInfo(ctx context.Context, query string) (result []*users.SearchUs
 	}
 	result = make([]*users.SearchUserInfoEntry, 0)
 	for i := 0; i < len(rsp.List); i++ {
+		if rsp.List[i].GetPhone() == "" {
+			continue
+		}
 		userInfo, ok := phoneToUserInfo[rsp.List[i].GetPhone()]
 		if ok {
 			entry := &users.SearchUserInfoEntry{

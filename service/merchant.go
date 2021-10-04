@@ -204,6 +204,9 @@ func SearchMerchantInfo(ctx context.Context, query string) (result []*users.Sear
 	}
 	result = make([]*users.SearchMerchantsInfoEntry, 0)
 	for i := 0; i < len(rsp.List); i++ {
+		if rsp.List[i].MerchantCode == "" {
+			continue
+		}
 		merchantInfo, ok := merchantCodeToMerchant[rsp.List[i].MerchantCode]
 		if ok {
 			entry := &users.SearchMerchantsInfoEntry{
