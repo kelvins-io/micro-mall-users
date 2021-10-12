@@ -81,49 +81,6 @@
         ]
       }
     },
-    "/v1/user/identity": {
-      "get": {
-        "summary": "检查用户身份",
-        "operationId": "UsersService_CheckUserIdentity",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/usersCheckUserIdentityResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/runtimeError"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "country_code",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "phone",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "pwd",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          }
-        ],
-        "tags": [
-          "UsersService"
-        ]
-      }
-    },
     "/v1/user/info": {
       "get": {
         "summary": "获取用户信息",
@@ -876,14 +833,6 @@
         }
       }
     },
-    "usersCheckUserIdentityResponse": {
-      "type": "object",
-      "properties": {
-        "common": {
-          "$ref": "#/definitions/usersCommonResponse"
-        }
-      }
-    },
     "usersCheckUserStateResponse": {
       "type": "object",
       "properties": {
@@ -1397,7 +1346,6 @@
         "ACCOUNT_EXIST",
         "ACCOUNT_NOT_EXIST",
         "USER_PWD_NOT_MATCH",
-        "USER_LOGIN_NOT_ALLOW",
         "USER_DELIVERY_INFO_EXIST",
         "USER_DELIVERY_INFO_NOT_EXIST",
         "TRANSACTION_FAILED",
@@ -1406,9 +1354,11 @@
         "USER_CHARGE_RUN",
         "USER_CHARGE_SUCCESS",
         "USER_CHARGE_TRADE_NO_EMPTY",
-        "USER_STATE_NOT_VERIFY"
+        "USER_STATE_NOT_VERIFY",
+        "USER_STATE_FORBIDDEN_LOGIN"
       ],
-      "default": "SUCCESS"
+      "default": "SUCCESS",
+      "title": "- USER_DELIVERY_INFO_EXIST: USER_LOGIN_NOT_ALLOW = 50008;"
     },
     "usersSearchMerchantInfoResponse": {
       "type": "object",

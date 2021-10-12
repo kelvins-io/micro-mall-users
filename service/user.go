@@ -20,6 +20,7 @@ import (
 	"gitee.com/kelvins-io/common/password"
 	"gitee.com/kelvins-io/kelvins"
 	"github.com/google/uuid"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -155,13 +156,6 @@ func LoginUser(ctx context.Context, req *users.LoginUserRequest) (string, int) {
 				kelvins.ErrLogger.Errorf(ctx, "GetUserByPhone err: %v, req: %v", err, json.MarshalToStringNoError(req))
 				return result, code.ErrorServer
 			}
-			if userDB.Id <= 0 {
-				return "", code.UserNotExist
-			}
-			pwd := password.GeneratePassword(loginInfo.GetPwd(), userDB.PasswordSalt)
-			if pwd != userDB.Password {
-				return result, code.UserPwdNotMatch
-			}
 			user = userDB
 			loginType = "手机号-密码"
 		case users.LoginPwdKind_EMAIL:
@@ -176,8 +170,22 @@ func LoginUser(ctx context.Context, req *users.LoginUserRequest) (string, int) {
 	case users.LoginType_TOKEN:
 		loginType = "认证token"
 	}
-	if user.Id <= 0 {
-		return "", code.UserNotExist
+	// 检查用户状态
+	retCode = checkUserState(ctx, user.Id)
+	if retCode != code.Success {
+		return "", retCode
+	}
+	switch req.GetLoginType() {
+	case users.LoginType_PWD:
+		pwd := password.GeneratePassword(req.GetPwd().GetPwd(), user.PasswordSalt)
+		if pwd != user.Password {
+			_, retCode := userLoginFailure(ctx, user.Id)
+			if retCode != code.Success {
+				return result, retCode
+			}
+			return result, code.UserPwdNotMatch
+		}
+	default:
 	}
 	token, err := util.GenerateToken(user.UserName, user.Id)
 	if err != nil {
@@ -187,18 +195,11 @@ func LoginUser(ctx context.Context, req *users.LoginUserRequest) (string, int) {
 	result = token
 
 	updateUserState := func() {
-		// 更新用户状态
-		state := args.UserOnlineState{
-			Uid:   user.Id,
-			State: "online",
-			Time:  util.ParseTimeOfStr(time.Now().Unix()),
+		// 更新在线状态
+		retCode := updateUserOnlineState(ctx, user.Id, args.UserOnlineStateOnline)
+		if retCode != code.Success {
+			return
 		}
-		userLoginKey := fmt.Sprintf("%v%d", args.CacheKeyUserSate, user.Id)
-		err := cache.Set(kelvins.RedisConn, userLoginKey, json.MarshalToStringNoError(state), 7200)
-		if err != nil {
-			kelvins.ErrLogger.Errorf(ctx, "setUserState err: %v, userLoginKey: %v", err, userLoginKey)
-		}
-
 		// 发送登录邮件
 		emailNotice := fmt.Sprintf(args.UserLoginTemplate, user.UserName, time.Now().String(), loginType)
 		if vars.EmailNoticeSetting != nil && vars.EmailNoticeSetting.Receivers != nil {
@@ -216,24 +217,8 @@ func LoginUser(ctx context.Context, req *users.LoginUserRequest) (string, int) {
 	return result, retCode
 }
 
-func CheckUserIdentity(ctx context.Context, req *users.CheckUserIdentityRequest) int {
-	userDB, err := repository.GetUserByPhone("password,password_salt", req.GetCountryCode(), req.GetPhone())
-	if err != nil {
-		kelvins.ErrLogger.Errorf(ctx, "GetUserByPhone err: %v, req: %v", err, json.MarshalToStringNoError(req))
-		return code.ErrorServer
-	}
-	if userDB.Id <= 0 {
-		return code.UserNotExist
-	}
-	pwd := password.GeneratePassword(req.GetPwd(), userDB.PasswordSalt)
-	if pwd != userDB.Password {
-		return code.UserPwdNotMatch
-	}
-	return code.Success
-}
-
 func PasswordReset(ctx context.Context, req *users.PasswordResetRequest) int {
-	user, err := repository.GetUserByUid(int(req.GetUid()))
+	user, err := repository.GetUserByUid("id,password_salt", int(req.GetUid()))
 	if err != nil {
 		kelvins.ErrLogger.Errorf(ctx, "GetUserByUid err: %v, uid: %v", err, req.GetUid())
 		return code.ErrorServer
@@ -283,7 +268,10 @@ func PasswordReset(ctx context.Context, req *users.PasswordResetRequest) int {
 }
 
 func UpdateUserLoginState(ctx context.Context, req *users.UpdateUserLoginStateRequest) int {
-	user, err := repository.GetUserByUid(int(req.GetUid()))
+	if req.Uid <= 0 {
+		return code.UserNotExist
+	}
+	user, err := repository.GetUserByUid("id", int(req.GetUid()))
 	if err != nil {
 		kelvins.ErrLogger.Errorf(ctx, "GetUserByUid err: %v, uid: %v", err, req.GetUid())
 		return code.ErrorServer
@@ -291,22 +279,15 @@ func UpdateUserLoginState(ctx context.Context, req *users.UpdateUserLoginStateRe
 	if user.Id <= 0 {
 		return code.UserNotExist
 	}
-	state := args.UserOnlineState{
-		Uid:   int(req.Uid),
-		State: "online",
-		Time:  util.ParseTimeOfStr(time.Now().Unix()),
-	}
-	userLoginKey := fmt.Sprintf("%v%d", args.CacheKeyUserSate, req.Uid)
-	err = cache.Set(kelvins.RedisConn, userLoginKey, json.MarshalToStringNoError(state), 7200)
-	if err != nil {
-		kelvins.ErrLogger.Errorf(ctx, "setUserState err: %v, userLoginKey: %q", err, userLoginKey)
-		return code.ErrorServer
-	}
-	return code.Success
+
+	return updateUserOnlineState(ctx, user.Id, req.GetState().GetContent())
 }
 
 func GetUserInfo(ctx context.Context, uid int) (*mysql.User, int) {
-	user, err := repository.GetUserByUid(uid)
+	if uid <= 0 {
+		return nil, code.UserNotExist
+	}
+	user, err := repository.GetUserByUid("*", uid)
 	if err != nil {
 		kelvins.ErrLogger.Errorf(ctx, "GetUserByUid err: %v, uid: %v", err, uid)
 		return user, code.ErrorServer
@@ -315,6 +296,9 @@ func GetUserInfo(ctx context.Context, uid int) (*mysql.User, int) {
 }
 
 func GetUserInfoByPhone(ctx context.Context, countryCode, phone string) (*mysql.User, int) {
+	if countryCode == "" || phone == "" {
+		return nil, code.UserNotExist
+	}
 	user, err := repository.GetUserByPhone("*", countryCode, phone)
 	if err != nil {
 		kelvins.ErrLogger.Errorf(ctx, "GetUserByPhone err: %v, countryCode: %v, phone:%v", err, countryCode, phone)
@@ -711,11 +695,111 @@ func CheckUserDeliveryInfo(ctx context.Context, req *users.CheckUserDeliveryInfo
 	return
 }
 
-func CheckUserState(ctx context.Context, req *users.CheckUserStateRequest) (retCode int) {
+func updateUserOnlineState(ctx context.Context, uid int, content string) (retCode int) {
 	retCode = code.Success
-	infoList, err := repository.FindUserInfo("id,state", req.GetUidList())
+	if uid <= 0 {
+		retCode = code.UserNotExist
+		return
+	}
+	// 更新用户状态
+	state := args.UserOnlineState{
+		Uid:   uid,
+		State: content,
+		Time:  util.ParseTimeOfStr(time.Now().Unix()),
+	}
+	userLoginKey := fmt.Sprintf("%v-%d", args.CacheKeyUserOnlineSate, uid)
+	err := cache.Set(kelvins.RedisConn, userLoginKey, json.MarshalToStringNoError(state), 24*3600)
 	if err != nil {
-		kelvins.ErrLogger.Errorf(ctx, "AccountCharge err: %v, req: %v", err, json.MarshalToStringNoError(req))
+		kelvins.ErrLogger.Errorf(ctx, "updateUserOnlineState err: %v, userLoginKey: %v", err, userLoginKey)
+		retCode = code.ErrorServer
+		return
+	}
+	return
+}
+
+func userLoginFailure(ctx context.Context, uid int) (failureFrequency, retCode int) {
+	retCode = code.Success
+	userLoginFailureKey := fmt.Sprintf("%v-%d", args.UserLoginFailureFrequency, uid)
+	str, err := cache.Get(kelvins.RedisConn, userLoginFailureKey)
+	if err != nil && err != cache.CacheNotFound {
+		kelvins.ErrLogger.Errorf(ctx, "userLoginFailure err: %v, userLoginFailureKey: %v", err, userLoginFailureKey)
+		return
+	}
+	if str != "" && err != cache.CacheNotFound {
+		failureFrequency, err = strconv.Atoi(str)
+		if err != nil {
+			kelvins.ErrLogger.Errorf(ctx, "userLoginFailure strconv err: %v, str: %v", err, str)
+			retCode = code.ErrorServer
+			return
+		}
+	}
+	if failureFrequency >= args.UserLoginFailureFrequencyMax {
+		retCode = updateUserOnlineState(ctx, uid, args.UserOnlineStateForbiddenLogin)
+		if retCode != code.Success {
+			return
+		}
+		retCode = code.UserStateForbiddenLogin
+		return
+	}
+	failureFrequency++
+	err = cache.Set(kelvins.RedisConn, userLoginFailureKey, fmt.Sprintf("%d", failureFrequency), 24*3600)
+	if err != nil {
+		kelvins.ErrLogger.Errorf(ctx, "userLoginFailure err: %v, userLoginFailureKey: %v", err, userLoginFailureKey)
+		retCode = code.ErrorServer
+		return
+	}
+	return
+}
+
+func getUserOnlineState(ctx context.Context, uid int) (string, error) {
+	var content string
+	var err error
+	userLoginKey := fmt.Sprintf("%v-%d", args.CacheKeyUserOnlineSate, uid)
+	str, err := cache.Get(kelvins.RedisConn, userLoginKey)
+	if err != nil && err != cache.CacheNotFound {
+		kelvins.ErrLogger.Errorf(ctx, "getUserOnlineState err: %v, userLoginKey: %v", err, userLoginKey)
+		return content, err
+	}
+	if err == cache.CacheNotFound {
+		return "", nil
+	}
+	var state args.UserOnlineState
+	err = json.Unmarshal(str, &state)
+	if err != nil {
+		kelvins.ErrLogger.Errorf(ctx, "getUserOnlineState Unmarshal err: %v, str: %v", err, str)
+		return content, err
+	}
+	content = state.State
+	return content, nil
+}
+
+func checkUserState(ctx context.Context, uid int) (retCode int) {
+	retCode = code.Success
+	if uid <= 0 {
+		retCode = code.UserNotExist
+		return
+	}
+	content, err := getUserOnlineState(ctx, uid)
+	if err != nil {
+		retCode = code.ErrorServer
+		return
+	}
+	switch content {
+	case args.UserOnlineStateOnline:
+		return
+	case args.UserOnlineStateForbiddenLogin:
+		retCode = code.UserStateForbiddenLogin
+		return
+	default:
+		return
+	}
+}
+
+func CheckUserState(ctx context.Context, uidList []int64) (retCode int) {
+	retCode = code.Success
+	infoList, err := repository.FindUserInfo("id,state", uidList)
+	if err != nil {
+		kelvins.ErrLogger.Errorf(ctx, "AccountCharge err: %v, req: %v", err, json.MarshalToStringNoError(uidList))
 		retCode = code.ErrorServer
 		return
 	}
@@ -723,7 +807,7 @@ func CheckUserState(ctx context.Context, req *users.CheckUserStateRequest) (retC
 		retCode = code.UserNotExist
 		return
 	}
-	if len(infoList) != len(req.GetUidList()) {
+	if len(infoList) != len(uidList) {
 		retCode = code.UserNotExist
 		return
 	}
@@ -734,6 +818,10 @@ func CheckUserState(ctx context.Context, req *users.CheckUserStateRequest) (retC
 		}
 		if infoList[i].State != 3 {
 			retCode = code.UserStateNotVerify
+			return
+		}
+		retCode = checkUserState(ctx, infoList[i].Id)
+		if retCode != code.Success {
 			return
 		}
 	}

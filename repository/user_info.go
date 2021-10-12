@@ -23,10 +23,10 @@ func FindUserInfoByPhone(sqlSelect string, countryCode []string, phone []string)
 	return result, err
 }
 
-func GetUserByUid(uid int) (*mysql.User, error) {
+func GetUserByUid(sqlSelect string, uid int) (*mysql.User, error) {
 	var user mysql.User
 	var err error
-	_, err = kelvins.XORM_DBEngine.Table(mysql.TableUser).Where("id = ?", uid).Get(&user)
+	_, err = kelvins.XORM_DBEngine.Table(mysql.TableUser).Select(sqlSelect).Where("id = ?", uid).Get(&user)
 	return &user, err
 }
 

@@ -58,8 +58,9 @@ func GetMsg(code int) string {
 }
 
 const (
-	CacheKeyUserSate = "user_state_"
+	CacheKeyUserOnlineSate = "online_state_"
 )
+
 const (
 	UserStateEventTypeRegister      = 10010
 	UserStateEventTypeLogin         = 10011
@@ -110,6 +111,16 @@ type UserOnlineState struct {
 	State string `json:"state"`
 	Time  string `json:"time"`
 }
+
+const (
+	UserOnlineStateOnline = "online-login"
+	UserOnlineStateForbiddenLogin = "forbidden to login"
+)
+
+const (
+	UserLoginFailureFrequency = "login-failure-frequency"
+	UserLoginFailureFrequencyMax = 3
+)
 
 const (
 	RpcServiceMicroMallPay    = "micro-mall-pay"

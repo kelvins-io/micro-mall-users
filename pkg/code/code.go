@@ -22,6 +22,7 @@ const (
 	UserChargeSuccess        = 29000019
 	UserChargeTradeNoEmpty   = 29000020
 	UserStateNotVerify       = 29000021
+	UserStateForbiddenLogin  = 29000022
 )
 
 var ErrMap = make(map[int]string)
@@ -47,6 +48,7 @@ func init() {
 		UserChargeSuccess:        "本次充值交易已成功",
 		UserChargeTradeNoEmpty:   "本次充值交易号为空",
 		UserStateNotVerify:       "用户身份未验证或审核或被锁定",
+		UserStateForbiddenLogin:  "用户被禁止登录",
 	}
 	errcode.RegisterErrMsgDict(dict)
 	for key, _ := range dict {

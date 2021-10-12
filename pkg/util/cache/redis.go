@@ -7,6 +7,10 @@ import (
 	"github.com/gomodule/redigo/redis"
 )
 
+var (
+	CacheNotFound = redis.ErrNil
+)
+
 func Set(pool *redis.Pool, key, value string, expire int32) error {
 	redisCon := pool.Get()
 	_, err := redisCon.Do("SETEX", buildRedisKey(key), expire, value)
