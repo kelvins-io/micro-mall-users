@@ -4,7 +4,7 @@ go 1.13
 
 require (
 	gitee.com/kelvins-io/common v1.1.5
-	gitee.com/kelvins-io/kelvins v1.6.0
+	gitee.com/kelvins-io/kelvins v1.6.1
 	github.com/DATA-DOG/godog v0.7.13 // indirect
 	github.com/RichardKnop/machinery v1.10.6
 	github.com/bojand/ghz v0.100.0
