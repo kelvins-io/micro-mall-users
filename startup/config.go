@@ -12,6 +12,7 @@ const (
 	SectionQueueUserStateNotice    = "queue-user-state-notice"
 	UserInfoSearchNotice           = "user-info-search-notice"
 	EmailNotice                    = "email-notice"
+	SectionG2Cache                 = "micro-mall-g2cache"
 )
 
 // LoadConfig 加载配置对象映射
@@ -31,6 +32,9 @@ func LoadConfig() error {
 	// 用户信息入库
 	vars.QueueAMQPSettingUserInfoSearchNotice = new(setting.QueueAMQPSettingS)
 	config.MapConfig(UserInfoSearchNotice, vars.QueueAMQPSettingUserInfoSearchNotice)
+	//加载G2Cache二级缓存配置
+	vars.G2CacheSetting = new(vars.G2CacheSettingS)
+	config.MapConfig(SectionG2Cache, vars.G2CacheSetting)
 
 	return nil
 }

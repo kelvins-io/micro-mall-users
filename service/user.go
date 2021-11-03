@@ -25,14 +25,17 @@ import (
 	"time"
 )
 
-func RegisterUser(ctx context.Context, req *users.RegisterRequest) (args.RegisterResult, int) {
-	result := args.RegisterResult{}
+func RegisterUser(ctx context.Context, req *users.RegisterRequest) (result args.RegisterResult, retCode int) {
+	result = args.RegisterResult{}
+	retCode = code.Success
 	isExist, ret := CheckUserExist(ctx, req.CountryCode, req.Phone)
 	if ret != code.Success {
-		return result, code.ErrorServer
+		retCode = code.ErrorServer
+		return
 	}
 	if isExist {
-		return result, code.UserExist
+		retCode = code.UserExist
+		return
 	}
 
 	salt := password.GenerateSalt()
@@ -65,17 +68,28 @@ func RegisterUser(ctx context.Context, req *users.RegisterRequest) (args.Registe
 	tx := kelvins.XORM_DBEngine.NewSession()
 	err := tx.Begin()
 	if err != nil {
-		kelvins.ErrLogger.Errorf(ctx, "CreateUser NewSession err: %v", err)
-		return result, code.ErrorServer
+		kelvins.ErrLogger.Errorf(ctx, "CreateUser Begin err: %v", err)
+		retCode = code.ErrorServer
+		return
 	}
+	defer func() {
+		if retCode != code.Success {
+			err := tx.Rollback()
+			if err != nil {
+				kelvins.ErrLogger.Errorf(ctx, "CreateUser Rollback err: %v", err)
+				return
+			}
+		}
+	}()
 	err = repository.CreateUser(tx, &user)
 	if err != nil {
-		tx.Rollback()
+		retCode = code.ErrorServer
 		kelvins.ErrLogger.Errorf(ctx, "CreateUser err: %v, user: %v", err, json.MarshalToStringNoError(user))
 		if strings.Contains(err.Error(), code.GetMsg(code.DBDuplicateEntry)) {
-			return result, code.UserExist
+			retCode = code.UserExist
+			return
 		}
-		return result, code.ErrorServer
+		return
 	}
 	result.InviteCode = user.InviteCode
 	pushNoticeService := NewPushNoticeService(vars.QueueServerUserRegisterNotice, PushMsgTag{
@@ -97,11 +111,16 @@ func RegisterUser(ctx context.Context, req *users.RegisterRequest) (args.Registe
 	}
 	_, ret = pushNoticeService.PushMessage(ctx, businessMsg)
 	if ret != code.Success {
-		tx.Rollback()
-		kelvins.ErrLogger.Errorf(ctx, "PushMessage register req: %v, err: %v", json.MarshalToStringNoError(businessMsg), code.GetMsg(ret))
-		return result, code.ErrorServer
+		retCode = code.ErrorServer
+		kelvins.ErrLogger.Errorf(ctx, "register user PushMessage register req: %v, err: %v", json.MarshalToStringNoError(businessMsg), code.GetMsg(ret))
+		return
 	}
-	tx.Commit()
+	err = tx.Commit()
+	if err != nil {
+		retCode = code.TransactionFailed
+		kelvins.ErrLogger.Errorf(ctx, "CreateUser Commit err: %v", err)
+		return
+	}
 
 	// 通知搜索
 	body := args.UserInfoSearch{
@@ -113,7 +132,7 @@ func RegisterUser(ctx context.Context, req *users.RegisterRequest) (args.Registe
 	}
 	userInfoSearchNotice(&body)
 
-	return result, code.Success
+	return
 }
 
 func userInfoSearchNotice(info *args.UserInfoSearch) {
@@ -325,7 +344,8 @@ func GetUserInfoByInviteCode(ctx context.Context, inviteCode string) (*mysql.Use
 	return user, code.Success
 }
 
-func ModifyUserDeliveryInfo(ctx context.Context, req *users.ModifyUserDeliveryInfoRequest) int {
+func ModifyUserDeliveryInfo(ctx context.Context, req *users.ModifyUserDeliveryInfoRequest) (retCode int) {
+	retCode = code.Success
 	if req.OperationType == users.OperationType_CREATE {
 		deliveryInfo := &mysql.UserLogisticsDelivery{
 			Uid:          req.Uid,
@@ -343,9 +363,19 @@ func ModifyUserDeliveryInfo(ctx context.Context, req *users.ModifyUserDeliveryIn
 			tx := kelvins.XORM_DBEngine.NewSession()
 			err := tx.Begin()
 			if err != nil {
+				retCode = code.ErrorServer
 				kelvins.ErrLogger.Errorf(ctx, "ModifyUserDeliveryInfo create Begin err: %v", err)
-				return code.ErrorServer
+				return
 			}
+			defer func() {
+				if retCode != code.Success {
+					err := tx.Rollback()
+					if err != nil {
+						kelvins.ErrLogger.Errorf(ctx, "ModifyUserDeliveryInfo create Rollback err: %v", err)
+						return
+					}
+				}
+			}()
 			where := map[string]interface{}{
 				"uid":        req.Uid,
 				"is_default": 1,
@@ -356,54 +386,47 @@ func ModifyUserDeliveryInfo(ctx context.Context, req *users.ModifyUserDeliveryIn
 			}
 			rowAffected, err := repository.UpdateUserLogisticsDeliveryByTx(tx, where, maps)
 			if err != nil {
-				errCallback := tx.Rollback()
-				if errCallback != nil {
-					kelvins.ErrLogger.Errorf(ctx, "UpdateUserLogisticsDeliveryByTx Rollback err:%v", errCallback)
-				}
+				retCode = code.ErrorServer
 				kelvins.ErrLogger.Errorf(ctx, "UpdateUserLogisticsDeliveryByTx err: %v, where: %v", err, json.MarshalToStringNoError(where))
-				return code.ErrorServer
+				return
 			}
 			if rowAffected <= 0 {
-				// 用户第一次添加除外
-				//errCallback := tx.Rollback()
-				//if errCallback != nil {
-				//	kelvins.ErrLogger.Errorf(ctx,"UpdateUserLogisticsDeliveryByTx rowAffected Rollback err:%v",errCallback)
-				//}
-				//return code.TransactionFailed
 			}
 			err = repository.CreateUserLogisticsDeliveryByTx(tx, deliveryInfo)
 			if err != nil {
-				errCallback := tx.Rollback()
-				if errCallback != nil {
-					kelvins.ErrLogger.Errorf(ctx, "CreateUserLogisticsDeliveryByTx Rollback err:%v", errCallback)
-				}
+				retCode = code.ErrorServer
 				kelvins.ErrLogger.Errorf(ctx, "CreateUserLogisticsDeliveryByTx err: %v, deliveryInfo: %v", err, json.MarshalToStringNoError(deliveryInfo))
-				return code.ErrorServer
+				return
 			}
 			err = tx.Commit()
 			if err != nil {
+				retCode = code.TransactionFailed
 				kelvins.ErrLogger.Errorf(ctx, "ModifyUserDeliveryInfo create Commit err: %v", err)
-				return code.ErrorServer
+				return
 			}
-			return code.Success
+			return
 		}
 		err := repository.CreateUserLogisticsDelivery(deliveryInfo)
 		if err != nil {
+			retCode = code.ErrorServer
 			kelvins.ErrLogger.Errorf(ctx, "CreateUserLogisticsDelivery err: %v, deliveryInfo: %v", err, json.MarshalToStringNoError(deliveryInfo))
-			return code.ErrorServer
+			return
 		}
-		return code.Success
+		return
 	} else if req.OperationType == users.OperationType_UPDATE {
 		if req.Info.Id <= 0 {
-			return code.UserDeliveryInfoNotExist
+			retCode = code.UserDeliveryInfoNotExist
+			return
 		}
 		deliveryInfoDB, err := repository.GetUserLogisticsDelivery("id", req.Uid, req.Info.Id)
 		if err != nil {
+			retCode = code.ErrorServer
 			kelvins.ErrLogger.Errorf(ctx, "GetUserLogisticsDelivery err: %v, id: %v", err, req.Info.Id)
-			return code.ErrorServer
+			return
 		}
 		if deliveryInfoDB.Id <= 0 {
-			return code.UserDeliveryInfoNotExist
+			retCode = code.UserDeliveryInfoNotExist
+			return
 		}
 		deliveryInfo := &mysql.UserLogisticsDelivery{
 			DeliveryUser: req.Info.DeliveryUser,
@@ -418,9 +441,19 @@ func ModifyUserDeliveryInfo(ctx context.Context, req *users.ModifyUserDeliveryIn
 			tx := kelvins.XORM_DBEngine.NewSession()
 			err := tx.Begin()
 			if err != nil {
-				kelvins.ErrLogger.Errorf(ctx, "ModifyUserDeliveryInfo create Begin err: %v", err)
-				return code.ErrorServer
+				retCode = code.ErrorServer
+				kelvins.ErrLogger.Errorf(ctx, "ModifyUserDeliveryInfo update Begin err: %v", err)
+				return
 			}
+			defer func() {
+				if retCode != code.Success {
+					err := tx.Rollback()
+					if err != nil {
+						kelvins.ErrLogger.Errorf(ctx, "ModifyUserDeliveryInfo update Rollback err: %v", err)
+						return
+					}
+				}
+			}()
 			where := map[string]interface{}{
 				"uid":        req.Uid,
 				"is_default": 1,
@@ -431,58 +464,50 @@ func ModifyUserDeliveryInfo(ctx context.Context, req *users.ModifyUserDeliveryIn
 			}
 			rowAffected, err := repository.UpdateUserLogisticsDeliveryByTx(tx, where, maps)
 			if err != nil {
-				errCallback := tx.Rollback()
-				if errCallback != nil {
-					kelvins.ErrLogger.Errorf(ctx, "UpdateUserLogisticsDeliveryByTx Rollback err:%v", errCallback)
-				}
+				retCode = code.ErrorServer
 				kelvins.ErrLogger.Errorf(ctx, "UpdateUserLogisticsDeliveryByTx err: %v, where: %v", err, json.MarshalToStringNoError(where))
-				return code.ErrorServer
+				return
 			}
 			if rowAffected <= 0 {
-				// 用户第一次添加除外
-				//errCallback := tx.Rollback()
-				//if errCallback != nil {
-				//	kelvins.ErrLogger.Errorf(ctx,"UpdateUserLogisticsDeliveryByTx rowAffected Rollback err:%v",errCallback)
-				//}
-				//return code.TransactionFailed
 			}
 			where2 := map[string]interface{}{
 				"id": req.Info.Id,
 			}
 			rowsAffected, err := repository.UpdateUserLogisticsDeliveryByTx(tx, where2, deliveryInfo)
 			if err != nil {
+				retCode = code.ErrorServer
 				kelvins.ErrLogger.Errorf(ctx, "UpdateUserLogisticsDeliveryByTx err: %v,id: %v, deliveryInfo: %v", err, req.Info.Id, json.MarshalToStringNoError(deliveryInfo))
-				return code.ErrorServer
+				return
 			}
 			if rowsAffected != 1 {
-				errCallback := tx.Rollback()
-				if errCallback != nil {
-					kelvins.ErrLogger.Errorf(ctx, "UpdateUserLogisticsDeliveryByTx rowAffected Rollback err:%v", errCallback)
-				}
-				return code.TransactionFailed
+				retCode = code.TransactionFailed
+				return
 			}
 			err = tx.Commit()
 			if err != nil {
+				retCode = code.ErrorServer
 				kelvins.ErrLogger.Errorf(ctx, "ModifyUserDeliveryInfo create Commit err: %v", err)
-				return code.ErrorServer
+				return
 			}
-			return code.Success
+			return
 		}
 		where := map[string]interface{}{
 			"id": req.Info.Id,
 		}
 		rowsAffected, err := repository.UpdateUserLogisticsDelivery(where, deliveryInfo)
 		if err != nil {
+			retCode = code.ErrorServer
 			kelvins.ErrLogger.Errorf(ctx, "UpdateUserLogisticsDelivery err: %v,id: %v, deliveryInfo: %v", err, req.Info.Id, json.MarshalToStringNoError(deliveryInfo))
-			return code.ErrorServer
+			return
 		}
 		if rowsAffected != 1 {
-			return code.TransactionFailed
+			retCode = code.TransactionFailed
+			return
 		}
-		return code.Success
+		return
 	}
 
-	return code.Success
+	return
 }
 
 const sqlSelectUserDeliveryInfo = "id,delivery_user,country_code,phone,area,area_detailed,is_default,label"
@@ -654,7 +679,6 @@ func UserAccountCharge(ctx context.Context, req *users.UserAccountChargeRequest)
 	}
 
 	kelvins.GPool.SendJob(func() {
-		// 发送登录邮件
 		var un strings.Builder
 		for _, v := range userInfoList {
 			un.WriteString(v.UserName)
@@ -879,7 +903,7 @@ func ListUserInfo(ctx context.Context, req *users.ListUserInfoRequest) (result [
 	return
 }
 
-func SearchUserInfo(ctx context.Context, query string) (result []*users.SearchUserInfoEntry, retCode int) {
+func searchUserInfo(ctx context.Context, query string) (result []*users.SearchUserInfoEntry, retCode int) {
 	result = make([]*users.SearchUserInfoEntry, 0)
 	retCode = code.Success
 	serverName := args.RpcServiceMicroMallSearch
@@ -953,5 +977,26 @@ func SearchUserInfo(ctx context.Context, query string) (result []*users.SearchUs
 			result = append(result, entry)
 		}
 	}
+	return
+}
+
+func SearchUserInfo(ctx context.Context, query string) (result []*users.SearchUserInfoEntry, retCode int) {
+	result = make([]*users.SearchUserInfoEntry, 0)
+	retCode = code.Success
+	searchKey := "micro-mall-users:search-user:" + query
+	err := vars.G2CacheEngine.Get(searchKey, 120, &result, func() (interface{}, error) {
+		ctx, cancel := context.WithTimeout(context.TODO(), 5*time.Second)
+		defer cancel()
+		list, ret := searchUserInfo(ctx, query)
+		if ret != code.Success {
+			return &list, fmt.Errorf("searchUserInfo ret %v", ret)
+		}
+		return &list, nil
+	})
+	if err != nil {
+		retCode = code.ErrorServer
+		return
+	}
+
 	return
 }

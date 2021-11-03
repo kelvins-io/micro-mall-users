@@ -703,7 +703,7 @@
     },
     "/v1/user/state/check": {
       "get": {
-        "summary": "检查用户",
+        "summary": "检查用户状态",
         "operationId": "UsersService_CheckUserState",
         "responses": {
           "200": {

@@ -20,15 +20,17 @@ import (
 	"time"
 )
 
-func MerchantsMaterial(ctx context.Context, req *users.MerchantsMaterialRequest) (int, int) {
-	var merchantId int
+func MerchantsMaterial(ctx context.Context, req *users.MerchantsMaterialRequest) (merchantId int, retCode int) {
+	retCode = code.Success
 	exist, err := repository.CheckUserExistById(int(req.Info.Uid))
 	if err != nil {
+		retCode = code.ErrorServer
 		kelvins.ErrLogger.Errorf(ctx, "CheckUserExistById err: %v,req : %v", err, json.MarshalToStringNoError(req))
-		return merchantId, code.ErrorServer
+		return
 	}
 	if !exist {
-		return merchantId, code.UserNotExist
+		retCode = code.UserNotExist
+		return
 	}
 
 	if req.OperationType == users.OperationType_CREATE {
@@ -46,16 +48,19 @@ func MerchantsMaterial(ctx context.Context, req *users.MerchantsMaterialRequest)
 		}
 		err := repository.CreateMerchantsMaterial(&merchantMaterial)
 		if err != nil {
+			retCode = code.ErrorServer
 			if strings.Contains(err.Error(), errcode.GetErrMsg(code.DBDuplicateEntry)) {
-				return merchantId, code.MerchantExist
+				retCode = code.MerchantExist
+				return
 			}
 			kelvins.ErrLogger.Errorf(ctx, "CreateMerchantsMaterial err: %v,merchantMaterial:%v", err, json.MarshalToStringNoError(merchantMaterial))
-			return merchantId, code.ErrorServer
+			return
 		}
 		record, err := repository.GetMerchantIdByUid(int(req.Info.Uid))
 		if err != nil {
+			retCode = code.ErrorServer
 			kelvins.ErrLogger.Errorf(ctx, "GetMerchantsMaterialByUid err: %v,uid : %v", err, req.Info.Uid)
-			return merchantId, code.ErrorServer
+			return
 		}
 		merchantId = record.MerchantId
 
@@ -85,7 +90,7 @@ func MerchantsMaterial(ctx context.Context, req *users.MerchantsMaterialRequest)
 			TaxCardNo:    req.GetInfo().GetTaxCardNo(),
 		})
 
-		return merchantId, code.Success
+		return
 	} else if req.OperationType == users.OperationType_UPDATE {
 		query := map[string]interface{}{
 			"uid": req.Info.Uid,
@@ -100,8 +105,9 @@ func MerchantsMaterial(ctx context.Context, req *users.MerchantsMaterialRequest)
 		}
 		err := repository.UpdateMerchantsMaterial(query, maps)
 		if err != nil {
+			retCode = code.ErrorServer
 			kelvins.ErrLogger.Errorf(ctx, "UpdateMerchantsMaterial err: %v,query : %+v, maps: %+v", err, query, maps)
-			return merchantId, code.ErrorServer
+			return
 		}
 
 		kelvins.GPool.SendJob(func() {
@@ -128,9 +134,9 @@ func MerchantsMaterial(ctx context.Context, req *users.MerchantsMaterialRequest)
 			TaxCardNo:    req.GetInfo().GetTaxCardNo(),
 		})
 
-		return merchantId, code.Success
+		return
 	}
-	return merchantId, code.Success
+	return
 }
 
 func GetMerchantsMaterial(ctx context.Context, req *users.GetMerchantsMaterialRequest) (*mysql.Merchant, int) {
@@ -164,6 +170,26 @@ func merchantsMaterialSearchNotice(info *args.MerchantInfoSearch) {
 }
 
 func SearchMerchantInfo(ctx context.Context, query string) (result []*users.SearchMerchantsInfoEntry, retCode int) {
+	result = make([]*users.SearchMerchantsInfoEntry, 0)
+	retCode = code.Success
+	searchKey := "micro-mall-users:search-merchant:" + query
+	err := vars.G2CacheEngine.Get(searchKey, 120, &result, func() (interface{}, error) {
+		ctx, cancel := context.WithTimeout(context.TODO(), 5*time.Second)
+		defer cancel()
+		list, ret := searchMerchantInfo(ctx, query)
+		if ret != code.Success {
+			return &list, fmt.Errorf("searchMerchantInfo ret %v", ret)
+		}
+		return &list, nil
+	})
+	if err != nil {
+		retCode = code.ErrorServer
+		return
+	}
+	return
+}
+
+func searchMerchantInfo(ctx context.Context, query string) (result []*users.SearchMerchantsInfoEntry, retCode int) {
 	result = make([]*users.SearchMerchantsInfoEntry, 0)
 	retCode = code.Success
 	serverName := args.RpcServiceMicroMallSearch

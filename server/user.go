@@ -119,6 +119,8 @@ func (u *UsersServer) Register(ctx context.Context, req *users.RegisterRequest) 
 		switch retCode {
 		case code.UserExist:
 			result.Common.Code = users.RetCode_USER_EXIST
+		case code.TransactionFailed:
+			result.Common.Code = users.RetCode_TRANSACTION_FAILED
 		default:
 			result.Common.Code = users.RetCode_ERROR
 		}
