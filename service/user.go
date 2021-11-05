@@ -984,7 +984,7 @@ func SearchUserInfo(ctx context.Context, query string) (result []*users.SearchUs
 	result = make([]*users.SearchUserInfoEntry, 0)
 	retCode = code.Success
 	searchKey := "micro-mall-users:search-user:" + query
-	err := vars.G2CacheEngine.Get(searchKey, 120, &result, func() (interface{}, error) {
+	err := kelvins.G2CacheEngine.Get(searchKey, 120, &result, func() (interface{}, error) {
 		ctx, cancel := context.WithTimeout(context.TODO(), 5*time.Second)
 		defer cancel()
 		list, ret := searchUserInfo(ctx, query)

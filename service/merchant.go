@@ -173,7 +173,7 @@ func SearchMerchantInfo(ctx context.Context, query string) (result []*users.Sear
 	result = make([]*users.SearchMerchantsInfoEntry, 0)
 	retCode = code.Success
 	searchKey := "micro-mall-users:search-merchant:" + query
-	err := vars.G2CacheEngine.Get(searchKey, 120, &result, func() (interface{}, error) {
+	err := kelvins.G2CacheEngine.Get(searchKey, 120, &result, func() (interface{}, error) {
 		ctx, cancel := context.WithTimeout(context.TODO(), 5*time.Second)
 		defer cancel()
 		list, ret := searchMerchantInfo(ctx, query)
