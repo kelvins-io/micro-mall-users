@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+
 	"gitee.com/cristiane/micro-mall-users/pkg/code"
 	"gitee.com/cristiane/micro-mall-users/pkg/util"
 	"gitee.com/cristiane/micro-mall-users/proto/micro_mall_users_proto/users"
@@ -108,6 +109,28 @@ func (u *UsersServer) CheckUserByPhone(ctx context.Context, req *users.CheckUser
 	return result, nil
 }
 
+func (u *UsersServer) GenVerifyCode(ctx context.Context, req *users.GenVerifyCodeRequest) (*users.GenVerifyCodeResponse, error) {
+	result := &users.GenVerifyCodeResponse{
+		Common: &users.CommonResponse{
+			Code: users.RetCode_SUCCESS,
+		},
+	}
+	verifyCode, retCode := service.GenVerifyCode(ctx, req)
+	if retCode != code.Success {
+		switch retCode {
+		case code.ErrorVerifyCodeLimited:
+			result.Common.Code = users.RetCode_USER_VERIFY_CODE_LIMITED
+		case code.ErrorVerifyCodeInterval:
+			result.Common.Code = users.RetCode_USER_VERIFY_CODE_INTERVAL
+		default:
+			result.Common.Code = users.RetCode_ERROR
+		}
+	}
+	result.VerifyCode = verifyCode.VerifyCode
+	result.Expire = verifyCode.Expire
+	return result, nil
+}
+
 func (u *UsersServer) Register(ctx context.Context, req *users.RegisterRequest) (*users.RegisterResponse, error) {
 	result := &users.RegisterResponse{
 		Common: &users.CommonResponse{
@@ -117,8 +140,16 @@ func (u *UsersServer) Register(ctx context.Context, req *users.RegisterRequest) 
 	reg, retCode := service.RegisterUser(ctx, req)
 	if retCode != code.Success {
 		switch retCode {
+		case code.ErrorVerifyCodeForbidden:
+			result.Common.Code = users.RetCode_USER_VERIFY_CODE_FORBIDDEN
+		case code.ErrorVerifyCodeExpire:
+			result.Common.Code = users.RetCode_USER_VERIFY_CODE_EXPIRE
+		case code.ErrorVerifyCodeInvalid:
+			result.Common.Code = users.RetCode_USER_VERIFY_CODE_INVALID
 		case code.UserExist:
 			result.Common.Code = users.RetCode_USER_EXIST
+		case code.ErrorInviteCodeInvalid:
+			result.Common.Code = users.RetCode_USER_INVITE_CODE_INVALID
 		case code.TransactionFailed:
 			result.Common.Code = users.RetCode_TRANSACTION_FAILED
 		default:
@@ -140,12 +171,20 @@ func (u *UsersServer) LoginUser(ctx context.Context, req *users.LoginUserRequest
 	token, retCode := service.LoginUser(ctx, req)
 	if retCode != code.Success {
 		switch retCode {
+		case code.ErrorVerifyCodeForbidden:
+			result.Common.Code = users.RetCode_USER_VERIFY_CODE_FORBIDDEN
+		case code.ErrorVerifyCodeExpire:
+			result.Common.Code = users.RetCode_USER_VERIFY_CODE_EXPIRE
+		case code.ErrorVerifyCodeInvalid:
+			result.Common.Code = users.RetCode_USER_VERIFY_CODE_INVALID
 		case code.UserNotExist:
 			result.Common.Code = users.RetCode_USER_NOT_EXIST
 		case code.UserPwdNotMatch:
 			result.Common.Code = users.RetCode_USER_PWD_NOT_MATCH
 		case code.UserStateForbiddenLogin:
 			result.Common.Code = users.RetCode_USER_STATE_FORBIDDEN_LOGIN
+		case code.UserStateNotVerify:
+			result.Common.Code = users.RetCode_USER_STATE_NOT_VERIFY
 		default:
 			result.Common.Code = users.RetCode_ERROR
 		}
@@ -163,6 +202,12 @@ func (u *UsersServer) PasswordReset(ctx context.Context, req *users.PasswordRese
 	retCode := service.PasswordReset(ctx, req)
 	if retCode != code.Success {
 		switch retCode {
+		case code.ErrorVerifyCodeForbidden:
+			result.Common.Code = users.RetCode_USER_VERIFY_CODE_FORBIDDEN
+		case code.ErrorVerifyCodeExpire:
+			result.Common.Code = users.RetCode_USER_VERIFY_CODE_EXPIRE
+		case code.ErrorVerifyCodeInvalid:
+			result.Common.Code = users.RetCode_USER_VERIFY_CODE_INVALID
 		case code.UserNotExist:
 			result.Common.Code = users.RetCode_USER_NOT_EXIST
 		default:

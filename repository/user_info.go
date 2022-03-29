@@ -52,7 +52,7 @@ func GetUserByPhone(sqlSelect, countryCode, phone string) (*mysql.User, error) {
 func GetUserByInviteCode(inviteCode string) (*mysql.User, error) {
 	var user mysql.User
 	var err error
-	_, err = kelvins.XORM_DBEngine.Table(mysql.TableUser).Where("invite_code = ?", inviteCode).Get(&user)
+	_, err = kelvins.XORM_DBEngine.Table(mysql.TableUser).Select("id").Where("invite_code = ?", inviteCode).Get(&user)
 	return &user, err
 }
 

@@ -70,6 +70,15 @@ const (
 	MerchantsMaterialInfoNoticeType = 10015
 )
 
+const (
+	VerifyCodeTemplate = "【%v】验证码 %v，用于%v，%v分钟内有效，验证码提供给其他人可能导致账号被盗，请勿泄漏，谨防被骗。"
+)
+
+type UserVerifyCode struct {
+	VerifyCode string `json:"verify_code"`
+	Expire     int64  `json:"expire"`
+}
+
 type UserInfoSearch struct {
 	UserName    string `json:"user_name"`
 	Phone       string `json:"phone"`
@@ -113,12 +122,12 @@ type UserOnlineState struct {
 }
 
 const (
-	UserOnlineStateOnline = "online-login"
+	UserOnlineStateOnline         = "online-login"
 	UserOnlineStateForbiddenLogin = "forbidden to login"
 )
 
 const (
-	UserLoginFailureFrequency = "login-failure-frequency"
+	UserLoginFailureFrequency    = "login-failure-frequency"
 	UserLoginFailureFrequencyMax = 3
 )
 

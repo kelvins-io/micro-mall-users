@@ -13,6 +13,19 @@ const (
 	TableUserLogisticsDelivery = "user_logistics_delivery"
 )
 
+type VerifyCodeRecord struct {
+	Id           int       `xorm:"'id' not null pk autoincr comment('自增id') INT"`
+	Uid          int       `xorm:"'uid' not null comment('用户UID') INT"`
+	BusinessType int       `xorm:"'business_type' comment('验证类型，1-注册登录，2-购买商品') TINYINT"`
+	VerifyCode   string    `xorm:"'verify_code' comment('验证码') index CHAR(6)"`
+	Expire       int       `xorm:"'expire' comment('过期时间unix') INT"`
+	CountryCode  string    `xorm:"'country_code' comment('验证码下发手机国际码') index(country_code_phone_index) CHAR(5)"`
+	Phone        string    `xorm:"'phone' comment('验证码下发手机号') index(country_code_phone_index) CHAR(11)"`
+	Email        string    `xorm:"'email' comment('验证码下发邮箱') index VARCHAR(255)"`
+	CreateTime   time.Time `xorm:"'create_time' comment('创建时间') DATETIME"`
+	UpdateTime   time.Time `xorm:"'update_time' comment('修改时间') DATETIME"`
+}
+
 type UserLogisticsDelivery struct {
 	Id           int64     `xorm:"pk autoincr comment('自增ID') BIGINT"`
 	Uid          int64     `xorm:"comment('用户ID') index BIGINT"`
@@ -37,19 +50,6 @@ type Account struct {
 	AccountType int       `xorm:"not null comment('账户类型，1-个人账户，2-公司账户，3-系统账户') unique(account_index) TINYINT"`
 	CreateTime  time.Time `xorm:"not null default CURRENT_TIMESTAMP comment('创建时间') index DATETIME"`
 	UpdateTime  time.Time `xorm:"not null default CURRENT_TIMESTAMP comment('更新时间') DATETIME"`
-}
-
-type VerifyCodeRecord struct {
-	Id           int       `xorm:"'id' not null pk autoincr comment('自增id') INT"`
-	Uid          int       `xorm:"'uid' not null comment('用户UID') INT"`
-	BusinessType int       `xorm:"'business_type' comment('验证类型，1-注册登录，2-购买商品') TINYINT"`
-	VerifyCode   string    `xorm:"'verify_code' comment('验证码') index CHAR(6)"`
-	Expire       int       `xorm:"'expire' comment('过期时间unix') INT"`
-	CountryCode  string    `xorm:"'country_code' comment('验证码下发手机国际码') index(country_code_phone_index) CHAR(5)"`
-	Phone        string    `xorm:"'phone' comment('验证码下发手机号') index(country_code_phone_index) CHAR(11)"`
-	Email        string    `xorm:"'email' comment('验证码下发邮箱') index VARCHAR(255)"`
-	CreateTime   time.Time `xorm:"'create_time' comment('创建时间') DATETIME"`
-	UpdateTime   time.Time `xorm:"'update_time' comment('修改时间') DATETIME"`
 }
 
 type User struct {

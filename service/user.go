@@ -4,6 +4,10 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strconv"
+	"strings"
+	"time"
+
 	"gitee.com/cristiane/micro-mall-users/model/args"
 	"gitee.com/cristiane/micro-mall-users/model/mysql"
 	"gitee.com/cristiane/micro-mall-users/pkg/code"
@@ -20,14 +24,23 @@ import (
 	"gitee.com/kelvins-io/common/password"
 	"gitee.com/kelvins-io/kelvins"
 	"github.com/google/uuid"
-	"strconv"
-	"strings"
-	"time"
 )
 
 func RegisterUser(ctx context.Context, req *users.RegisterRequest) (result args.RegisterResult, retCode int) {
 	result = args.RegisterResult{}
 	retCode = code.Success
+
+	// 检查验证码
+	reqCheckVerifyCode := checkVerifyCodeArgs{
+		businessType: args.VerifyCodeRegister,
+		countryCode:  req.CountryCode,
+		phone:        req.Phone,
+		verifyCode:   req.VerifyCode,
+	}
+	if retCode = checkVerifyCode(ctx, &reqCheckVerifyCode); retCode != code.Success {
+		return
+	}
+	// 是否重复注册
 	isExist, ret := CheckUserExist(ctx, req.CountryCode, req.Phone)
 	if ret != code.Success {
 		retCode = code.ErrorServer
@@ -37,7 +50,23 @@ func RegisterUser(ctx context.Context, req *users.RegisterRequest) (result args.
 		retCode = code.UserExist
 		return
 	}
+	// 邀请码
+	var inviterUser = 0
+	if req.InviterUser != "" {
+		user, err := repository.GetUserByInviteCode(req.InviterUser)
+		if err != nil {
+			kelvins.ErrLogger.Errorf(ctx, "GetUserByInviteCode err: %v, inviteCode: %v", err, req.InviterUser)
+			retCode = code.ErrorServer
+			return
+		}
+		if user.Id <= 0 {
+			retCode = code.ErrorInviteCodeInvalid
+			return
+		}
+		inviterUser = user.Id
+	}
 
+	// register
 	salt := password.GenerateSalt()
 	pwd := password.GeneratePassword(req.Password, salt)
 	idCardNo := sql.NullString{
@@ -60,7 +89,7 @@ func RegisterUser(ctx context.Context, req *users.RegisterRequest) (result args.
 		Email:        req.Email,
 		State:        3,
 		IdCardNo:     idCardNo,
-		Inviter:      int(req.InviterUser),
+		Inviter:      inviterUser,
 		InviteCode:   GenInviterCode(),
 		CreateTime:   time.Now(),
 		UpdateTime:   time.Now(),
@@ -92,6 +121,7 @@ func RegisterUser(ctx context.Context, req *users.RegisterRequest) (result args.
 		return
 	}
 	result.InviteCode = user.InviteCode
+	// 消息队列-注册附加业务
 	pushNoticeService := NewPushNoticeService(vars.QueueServerUserRegisterNotice, PushMsgTag{
 		DeliveryTag:    args.TaskNameUserRegisterNotice,
 		DeliveryErrTag: args.TaskNameUserRegisterNoticeErr,
@@ -130,6 +160,7 @@ func RegisterUser(ctx context.Context, req *users.RegisterRequest) (result args.
 		IdCardNo:    req.GetIdCardNo(),
 		ContactAddr: req.GetContactAddr(),
 	}
+	// 异步通知
 	userInfoSearchNotice(&body)
 
 	return
@@ -154,7 +185,7 @@ func LoginUser(ctx context.Context, req *users.LoginUserRequest) (string, int) {
 	result := ""
 	loginType := ""
 	retCode := code.Success
-	user := &mysql.User{}
+	userInfo := &mysql.User{}
 	switch req.GetLoginType() {
 	case users.LoginType_VERIFY_CODE:
 		loginInfo := req.GetVerifyCode()
@@ -164,7 +195,7 @@ func LoginUser(ctx context.Context, req *users.LoginUserRequest) (string, int) {
 			return result, code.ErrorServer
 		}
 		loginType = "验证码"
-		user = userDB
+		userInfo = userDB
 	case users.LoginType_PWD:
 		loginInfo := req.GetPwd()
 		switch loginInfo.GetLoginKind() {
@@ -175,7 +206,7 @@ func LoginUser(ctx context.Context, req *users.LoginUserRequest) (string, int) {
 				kelvins.ErrLogger.Errorf(ctx, "GetUserByPhone err: %v, req: %v", err, json.MarshalToStringNoError(req))
 				return result, code.ErrorServer
 			}
-			user = userDB
+			userInfo = userDB
 			loginType = "手机号-密码"
 		case users.LoginPwdKind_EMAIL:
 			userDB, err := repository.GetUserByEmail(sqlSelectLoginUser, loginInfo.GetEmail().GetContent())
@@ -183,44 +214,61 @@ func LoginUser(ctx context.Context, req *users.LoginUserRequest) (string, int) {
 				kelvins.ErrLogger.Errorf(ctx, "GetUserByPhone err: %v, req: %v", err, json.MarshalToStringNoError(req))
 				return result, code.ErrorServer
 			}
-			user = userDB
+			userInfo = userDB
 			loginType = "邮箱-密码"
 		}
 	case users.LoginType_TOKEN:
 		loginType = "认证token"
 	}
+	if userInfo.Id <= 0 {
+		return "", code.UserNotExist
+	}
 	// 检查用户状态
-	retCode = checkUserState(ctx, user.Id)
+	retCode = CheckUserState(ctx, []int64{int64(userInfo.Id)})
 	if retCode != code.Success {
 		return "", retCode
 	}
+
+	// 根据登录类型处理
 	switch req.GetLoginType() {
 	case users.LoginType_PWD:
-		pwd := password.GeneratePassword(req.GetPwd().GetPwd(), user.PasswordSalt)
-		if pwd != user.Password {
-			_, retCode := userLoginFailure(ctx, user.Id)
+		pwd := password.GeneratePassword(req.GetPwd().GetPwd(), userInfo.PasswordSalt)
+		if pwd != userInfo.Password {
+			_, retCode := userLoginFailure(ctx, userInfo.Id)
 			if retCode != code.Success {
 				return result, retCode
 			}
 			return result, code.UserPwdNotMatch
 		}
+	case users.LoginType_VERIFY_CODE:
+		// 检查验证码
+		reqCheckVerifyCode := checkVerifyCodeArgs{
+			businessType: args.VerifyCodeLogin,
+			countryCode:  req.GetVerifyCode().GetPhone().GetCountryCode(),
+			phone:        req.GetVerifyCode().GetPhone().GetPhone(),
+			verifyCode:   req.GetVerifyCode().VerifyCode,
+		}
+		if retCode = checkVerifyCode(ctx, &reqCheckVerifyCode); retCode != code.Success {
+			return result, retCode
+		}
 	default:
 	}
-	token, err := util.GenerateToken(user.UserName, user.Id)
+	// 生成token
+	token, err := util.GenerateToken(userInfo.UserName, userInfo.Id)
 	if err != nil {
-		kelvins.ErrLogger.Errorf(ctx, "GenerateToken err: %v, req: %v", err, json.MarshalToStringNoError(user))
+		kelvins.ErrLogger.Errorf(ctx, "GenerateToken err: %v, req: %v", err, json.MarshalToStringNoError(userInfo))
 		return token, code.ErrorServer
 	}
 	result = token
 
+	// 更新在线状态
 	updateUserState := func() {
-		// 更新在线状态
-		retCode := updateUserOnlineState(ctx, user.Id, args.UserOnlineStateOnline)
+		retCode := updateUserOnlineState(ctx, userInfo.Id, args.UserOnlineStateOnline)
 		if retCode != code.Success {
 			return
 		}
 		// 发送登录邮件
-		emailNotice := fmt.Sprintf(args.UserLoginTemplate, user.UserName, time.Now().String(), loginType)
+		emailNotice := fmt.Sprintf(args.UserLoginTemplate, userInfo.UserName, time.Now().String(), loginType)
 		if vars.EmailNoticeSetting != nil && vars.EmailNoticeSetting.Receivers != nil {
 			for _, receiver := range vars.EmailNoticeSetting.Receivers {
 				err = email.SendEmailNotice(ctx, receiver, kelvins.AppName, emailNotice)
@@ -237,6 +285,24 @@ func LoginUser(ctx context.Context, req *users.LoginUserRequest) (string, int) {
 }
 
 func PasswordReset(ctx context.Context, req *users.PasswordResetRequest) int {
+	userInfo, ret := GetUserInfo(ctx, int(req.Uid))
+	if ret != code.Success {
+		return ret
+	}
+	if userInfo == nil || userInfo.Id <= 0 {
+		return code.UserNotExist
+	}
+
+	reqCheckVerifyCode := checkVerifyCodeArgs{
+		businessType: args.VerifyCodePassword,
+		countryCode:  userInfo.CountryCode,
+		phone:        userInfo.Phone,
+		verifyCode:   req.VerifyCode,
+	}
+	if retCode := checkVerifyCode(ctx, &reqCheckVerifyCode); retCode != code.Success {
+		return retCode
+	}
+
 	user, err := repository.GetUserByUid("id,password_salt", int(req.GetUid()))
 	if err != nil {
 		kelvins.ErrLogger.Errorf(ctx, "GetUserByUid err: %v, uid: %v", err, req.GetUid())
@@ -797,7 +863,7 @@ func getUserOnlineState(ctx context.Context, uid int) (string, error) {
 	return content, nil
 }
 
-func checkUserState(ctx context.Context, uid int) (retCode int) {
+func checkUserOnState(ctx context.Context, uid int) (retCode int) {
 	retCode = code.Success
 	if uid <= 0 {
 		retCode = code.UserNotExist
@@ -821,6 +887,7 @@ func checkUserState(ctx context.Context, uid int) (retCode int) {
 
 func CheckUserState(ctx context.Context, uidList []int64) (retCode int) {
 	retCode = code.Success
+	// 1 检查用户持久化状态
 	infoList, err := repository.FindUserInfo("id,state", uidList)
 	if err != nil {
 		kelvins.ErrLogger.Errorf(ctx, "AccountCharge err: %v, req: %v", err, json.MarshalToStringNoError(uidList))
@@ -844,7 +911,8 @@ func CheckUserState(ctx context.Context, uidList []int64) (retCode int) {
 			retCode = code.UserStateNotVerify
 			return
 		}
-		retCode = checkUserState(ctx, infoList[i].Id)
+		// 检查用户在线标记状态
+		retCode = checkUserOnState(ctx, infoList[i].Id)
 		if retCode != code.Success {
 			return
 		}

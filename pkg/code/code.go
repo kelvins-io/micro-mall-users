@@ -23,6 +23,13 @@ const (
 	UserChargeTradeNoEmpty   = 29000020
 	UserStateNotVerify       = 29000021
 	UserStateForbiddenLogin  = 29000022
+	ErrorVerifyCodeEmpty     = 29000023
+	ErrorVerifyCodeInvalid   = 29000024
+	ErrorVerifyCodeExpire    = 29000025
+	ErrorVerifyCodeInterval  = 29000027
+	ErrorVerifyCodeLimited   = 29000028
+	ErrorVerifyCodeForbidden = 29000029
+	ErrorInviteCodeInvalid   = 29000030
 )
 
 var ErrMap = make(map[int]string)
@@ -49,6 +56,12 @@ func init() {
 		UserChargeTradeNoEmpty:   "本次充值交易号为空",
 		UserStateNotVerify:       "用户身份未验证或审核或被锁定",
 		UserStateForbiddenLogin:  "用户被禁止登录",
+		ErrorVerifyCodeEmpty:     "验证码为空",
+		ErrorVerifyCodeInvalid:   "验证码无效",
+		ErrorVerifyCodeExpire:    "验证码过期",
+		ErrorVerifyCodeInterval:  "验证码出错",
+		ErrorVerifyCodeForbidden: "验证码权限不够",
+		ErrorInviteCodeInvalid:   "无效的邀请码",
 	}
 	errcode.RegisterErrMsgDict(dict)
 	for key, _ := range dict {

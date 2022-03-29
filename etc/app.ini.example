@@ -38,6 +38,12 @@ ParseTime = true
 Secret = "&WJof0jaY4ByTHR2"
 TokenExpireSecond = 2592000
 
+[users-verify_code]
+ExpireMinute = 100
+SendPeriodLimitCount = 10
+SendPeriodLimitExpireSecond = 3600
+SendIntervalExpireSecond = 60
+
 [kelvins-redis]
 Host = "127.0.0.1:6379"
 Password = "xxx"

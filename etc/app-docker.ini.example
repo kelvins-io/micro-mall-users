@@ -22,6 +22,12 @@ NumServerWorkers = 50
 RootPath = "./logs"
 Level = "debug"
 
+[users-verify_code]
+ExpireMinute = 100
+SendPeriodLimitCount = 10
+SendPeriodLimitExpireSecond = 3600
+SendIntervalExpireSecond = 60
+
 [kelvins-mysql]
 Host = "mysql5_7:3306"
 UserName = "root"

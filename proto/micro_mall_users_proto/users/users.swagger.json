@@ -769,6 +769,39 @@
           "UsersService"
         ]
       }
+    },
+    "/v1/user/verify_code/gen": {
+      "post": {
+        "summary": "验证码",
+        "operationId": "UsersService_GenVerifyCode",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/usersGenVerifyCodeResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/usersGenVerifyCodeRequest"
+            }
+          }
+        ],
+        "tags": [
+          "UsersService"
+        ]
+      }
     }
   },
   "definitions": {
@@ -879,6 +912,43 @@
           "items": {
             "$ref": "#/definitions/usersUserInfoMain"
           }
+        }
+      }
+    },
+    "usersGenVerifyCodeRequest": {
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "format": "int64"
+        },
+        "country_code": {
+          "type": "string"
+        },
+        "phone": {
+          "type": "string"
+        },
+        "business_type": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "receiver": {
+          "type": "string"
+        }
+      }
+    },
+    "usersGenVerifyCodeResponse": {
+      "type": "object",
+      "properties": {
+        "common": {
+          "$ref": "#/definitions/usersCommonResponse"
+        },
+        "verify_code": {
+          "type": "string"
+        },
+        "expire": {
+          "type": "string",
+          "format": "int64"
         }
       }
     },
@@ -1262,6 +1332,9 @@
         },
         "pwd": {
           "type": "string"
+        },
+        "verify_code": {
+          "type": "string"
         }
       }
     },
@@ -1300,8 +1373,7 @@
           "type": "string"
         },
         "inviter_user": {
-          "type": "string",
-          "format": "int64"
+          "type": "string"
         },
         "contact_addr": {
           "type": "string"
@@ -1311,6 +1383,9 @@
           "format": "int32"
         },
         "password": {
+          "type": "string"
+        },
+        "verify_code": {
           "type": "string"
         }
       }
@@ -1355,10 +1430,15 @@
         "USER_CHARGE_SUCCESS",
         "USER_CHARGE_TRADE_NO_EMPTY",
         "USER_STATE_NOT_VERIFY",
-        "USER_STATE_FORBIDDEN_LOGIN"
+        "USER_STATE_FORBIDDEN_LOGIN",
+        "USER_VERIFY_CODE_LIMITED",
+        "USER_VERIFY_CODE_INTERVAL",
+        "USER_VERIFY_CODE_FORBIDDEN",
+        "USER_VERIFY_CODE_EXPIRE",
+        "USER_VERIFY_CODE_INVALID",
+        "USER_INVITE_CODE_INVALID"
       ],
-      "default": "SUCCESS",
-      "title": "- USER_DELIVERY_INFO_EXIST: USER_LOGIN_NOT_ALLOW = 50008;"
+      "default": "SUCCESS"
     },
     "usersSearchMerchantInfoResponse": {
       "type": "object",

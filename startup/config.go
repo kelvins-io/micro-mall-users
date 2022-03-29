@@ -12,6 +12,7 @@ const (
 	SectionQueueUserStateNotice    = "queue-user-state-notice"
 	UserInfoSearchNotice           = "user-info-search-notice"
 	EmailNotice                    = "email-notice"
+	SectionVerifyCode              = "users-verify_code"
 )
 
 // LoadConfig 加载配置对象映射
@@ -31,6 +32,8 @@ func LoadConfig() error {
 	// 用户信息入库
 	vars.QueueAMQPSettingUserInfoSearchNotice = new(setting.QueueAMQPSettingS)
 	config.MapConfig(UserInfoSearchNotice, vars.QueueAMQPSettingUserInfoSearchNotice)
-
+	// 加载验证码配置
+	vars.VerifyCodeSetting = new(vars.VerifyCodeSettingS)
+	config.MapConfig(SectionVerifyCode, vars.VerifyCodeSetting)
 	return nil
 }
