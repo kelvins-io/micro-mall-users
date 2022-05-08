@@ -13,10 +13,6 @@ type JwtSettingS struct {
 	TokenExpireSecond int
 }
 
-type EmailNoticeSettingS struct {
-	Receivers []string `json:"receivers"`
-}
-
 type VerifyCodeSettingS struct {
 	ExpireMinute int `json:"expire_minute"`
 	//number of requests to send verification code in a period of time

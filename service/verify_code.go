@@ -19,8 +19,7 @@ import (
 	"gitee.com/kelvins-io/kelvins"
 )
 
-func GenVerifyCode(ctx context.Context, req *users.GenVerifyCodeRequest) (*args.UserVerifyCode, int) {
-	result := &args.UserVerifyCode{}
+func GenVerifyCode(ctx context.Context, req *users.GenVerifyCodeRequest) int {
 	retCode := code.Success
 	var (
 		err error
@@ -34,22 +33,22 @@ func GenVerifyCode(ctx context.Context, req *users.GenVerifyCodeRequest) (*args.
 	if limitRetCode != code.Success {
 		kelvins.ErrLogger.Infof(ctx, "checkVerifyCodeLimit %v %v is limited", req.CountryCode, req.Phone)
 		retCode = limitRetCode
-		return result, retCode
+		return retCode
 	}
 
 	var uid int
 	uid = int(req.Uid)
-	verifyCode := random.KrandNum(6)
+	userInfo, err := repository.GetUserByPhone("id,user_name,email", req.CountryCode, req.Phone)
+	if err != nil {
+		retCode = code.ErrorServer
+		return retCode
+	}
 	if req.Uid <= 0 {
-		userInfo, ret := GetUserInfoByPhone(ctx, req.CountryCode, req.Phone)
-		if ret == code.ErrorServer {
-			retCode = ret
-			return result, retCode
-		}
 		if userInfo != nil {
 			uid = userInfo.Id
 		}
 	}
+	verifyCode := random.KrandNum(6)
 	verifyCodeExpire := time.Now().Add(time.Duration(vars.VerifyCodeSetting.ExpireMinute) * time.Minute).Unix()
 	verifyCodeRecord := mysql.VerifyCodeRecord{
 		Uid:          uid,
@@ -66,7 +65,7 @@ func GenVerifyCode(ctx context.Context, req *users.GenVerifyCodeRequest) (*args.
 	if err != nil {
 		kelvins.ErrLogger.Errorf(ctx, "CreateVerifyCodeRecord err: %v, req: %v", err, json.MarshalToStringNoError(req))
 		retCode = code.ErrorServer
-		return result, retCode
+		return retCode
 	}
 
 	key := fmt.Sprintf("%s-%s-%d", req.CountryCode, req.Phone, req.BusinessType)
@@ -74,40 +73,39 @@ func GenVerifyCode(ctx context.Context, req *users.GenVerifyCodeRequest) (*args.
 	if err != nil {
 		kelvins.ErrLogger.Errorf(ctx, "G2CacheEngine Set err: %v, key: %s,val: %v", err, key, json.MarshalToStringNoError(verifyCodeRecord))
 		retCode = code.ErrorVerifyCodeInterval
-		return result, retCode
+		return retCode
 	}
 
 	err = limiter.SetVerifyCodeInterval(limitKey, vars.VerifyCodeSetting.SendIntervalExpireSecond)
 	if err != nil {
 		kelvins.ErrLogger.Errorf(ctx, "SetVerifyCodeInterval err: %v, req: %v", err, json.MarshalToStringNoError(req))
 		retCode = code.ErrorVerifyCodeInterval
-		return result, retCode
+		return retCode
 	}
 
 	err = limiter.SetVerifyCodePeriodLimitCount(limitKey, limitCount+1, vars.VerifyCodeSetting.SendPeriodLimitExpireSecond)
 	if err != nil {
 		kelvins.ErrLogger.Errorf(ctx, "SetVerifyCodePeriodLimitCount err: %v, req: %v", err, json.MarshalToStringNoError(req))
 		retCode = code.ErrorVerifyCodeInterval
-		return result, retCode
+		return retCode
 	}
 
+	notice := fmt.Sprintf(args.VerifyCodeTemplate, userInfo.UserName, verifyCode, args.GetMsg(int(req.BusinessType)), vars.VerifyCodeSetting.ExpireMinute)
 	if req.Receiver != "" {
-		job := func() {
-			notice := fmt.Sprintf(args.VerifyCodeTemplate, kelvins.AppName, verifyCode, args.GetMsg(int(req.BusinessType)), vars.VerifyCodeSetting.ExpireMinute)
-			for _, receiver := range strings.Split(req.Receiver, ",") {
-				err = email.SendEmailNotice(ctx, receiver, kelvins.AppName, notice)
-				if err != nil {
-					kelvins.ErrLogger.Errorf(ctx, "SendEmailNotice err %v,receiver:%v, emailNotice: %v", err, receiver, notice)
-				}
+		for _, receiver := range strings.Split(req.Receiver, ",") {
+			err = email.SendEmailNotice(ctx, receiver, kelvins.AppName, notice)
+			if err != nil {
+				kelvins.ErrLogger.Errorf(ctx, "SendEmailNotice err %v,receiver:%v, emailNotice: %v", err, receiver, notice)
 			}
 		}
-		kelvins.GPool.SendJob(job)
+	} else {
+		err = email.SendEmailNotice(ctx, userInfo.Email, kelvins.AppName, notice)
+		if err != nil {
+			kelvins.ErrLogger.Errorf(ctx, "SendEmailNotice err %v,receiver:%v, emailNotice: %v", err, userInfo.Email, notice)
+		}
 	}
 
-	result.VerifyCode = verifyCode
-	result.Expire = verifyCodeExpire
-
-	return result, retCode
+	return retCode
 }
 
 func checkVerifyCode(ctx context.Context, req *checkVerifyCodeArgs) int {

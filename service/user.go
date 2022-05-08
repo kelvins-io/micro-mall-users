@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"gitee.com/cristiane/micro-mall-users/model/args"
@@ -13,7 +14,6 @@ import (
 	"gitee.com/cristiane/micro-mall-users/pkg/code"
 	"gitee.com/cristiane/micro-mall-users/pkg/util"
 	"gitee.com/cristiane/micro-mall-users/pkg/util/cache"
-	"gitee.com/cristiane/micro-mall-users/pkg/util/email"
 	"gitee.com/cristiane/micro-mall-users/proto/micro_mall_pay_proto/pay_business"
 	"gitee.com/cristiane/micro-mall-users/proto/micro_mall_search_proto/search_business"
 	"gitee.com/cristiane/micro-mall-users/proto/micro_mall_users_proto/users"
@@ -31,6 +31,9 @@ func RegisterUser(ctx context.Context, req *users.RegisterRequest) (result args.
 	retCode = code.Success
 
 	// 检查验证码
+	if req.CountryCode == "" {
+		req.CountryCode = args.DefaultCountryCode
+	}
 	reqCheckVerifyCode := checkVerifyCodeArgs{
 		businessType: args.VerifyCodeRegister,
 		countryCode:  req.CountryCode,
@@ -50,6 +53,18 @@ func RegisterUser(ctx context.Context, req *users.RegisterRequest) (result args.
 		retCode = code.UserExist
 		return
 	}
+	if req.GetAccountId() != "" {
+		isExist, ret := CheckUserExistByAccountId(ctx, req.GetAccountId())
+		if ret != code.Success {
+			retCode = code.ErrorServer
+			return
+		}
+		if isExist {
+			retCode = code.UserExist
+			return
+		}
+	}
+
 	// 邀请码
 	var inviterUser = 0
 	if req.InviterUser != "" {
@@ -76,8 +91,12 @@ func RegisterUser(ctx context.Context, req *users.RegisterRequest) (result args.
 	if req.IdCardNo != "" {
 		idCardNo.Valid = true
 	}
+	accountId := req.GetAccountId()
+	if accountId == "" {
+		accountId = GenAccountId()
+	}
 	user := mysql.User{
-		AccountId:    GenAccountId(),
+		AccountId:    accountId,
 		UserName:     req.UserName,
 		Password:     pwd,
 		PasswordSalt: salt,
@@ -122,24 +141,19 @@ func RegisterUser(ctx context.Context, req *users.RegisterRequest) (result args.
 	}
 	result.InviteCode = user.InviteCode
 	// 消息队列-注册附加业务
-	pushNoticeService := NewPushNoticeService(vars.QueueServerUserRegisterNotice, PushMsgTag{
-		DeliveryTag:    args.TaskNameUserRegisterNotice,
-		DeliveryErrTag: args.TaskNameUserRegisterNoticeErr,
-		RetryCount:     vars.QueueAMQPSettingUserRegisterNotice.TaskRetryCount,
-		RetryTimeout:   vars.QueueAMQPSettingUserRegisterNotice.TaskRetryTimeout,
-	})
+	pushUserRegisterNoticeServiceOne.Do(initRegisterPushNotice)
 	businessMsg := args.CommonBusinessMsg{
 		Type: args.UserStateEventTypeRegister,
 		Tag:  args.GetMsg(args.UserStateEventTypeRegister),
 		UUID: genUUID(),
+		Time: util.ParseTimeOfStr(time.Now().Unix()),
 		Content: json.MarshalToStringNoError(args.UserRegisterNotice{
 			CountryCode: req.CountryCode,
 			Phone:       req.Phone,
-			Time:        util.ParseTimeOfStr(time.Now().Unix()),
 			State:       3,
 		}),
 	}
-	_, ret = pushNoticeService.PushMessage(ctx, businessMsg)
+	_, ret = pushUserRegisterNoticeService.PushMessage(ctx, businessMsg)
 	if ret != code.Success {
 		retCode = code.ErrorServer
 		kelvins.ErrLogger.Errorf(ctx, "register user PushMessage register req: %v, err: %v", json.MarshalToStringNoError(businessMsg), code.GetMsg(ret))
@@ -152,7 +166,7 @@ func RegisterUser(ctx context.Context, req *users.RegisterRequest) (result args.
 		return
 	}
 
-	// 通知搜索
+	// 异步通知搜索
 	body := args.UserInfoSearch{
 		UserName:    req.GetUserName(),
 		Phone:       req.GetCountryCode() + ":" + req.GetPhone(),
@@ -164,6 +178,18 @@ func RegisterUser(ctx context.Context, req *users.RegisterRequest) (result args.
 	userInfoSearchNotice(&body)
 
 	return
+}
+
+var pushUserRegisterNoticeService *PushNoticeService
+var pushUserRegisterNoticeServiceOne sync.Once
+
+func initRegisterPushNotice() {
+	pushUserRegisterNoticeService = NewPushNoticeService(vars.QueueServerUserRegisterNotice, PushMsgTag{
+		DeliveryTag:    args.TaskNameUserRegisterNotice,
+		DeliveryErrTag: args.TaskNameUserRegisterNoticeErr,
+		RetryCount:     vars.QueueAMQPSettingUserRegisterNotice.TaskRetryCount,
+		RetryTimeout:   vars.QueueAMQPSettingUserRegisterNotice.TaskRetryTimeout,
+	})
 }
 
 func userInfoSearchNotice(info *args.UserInfoSearch) {
@@ -179,7 +205,7 @@ func userInfoSearchNotice(info *args.UserInfoSearch) {
 	})
 }
 
-const sqlSelectLoginUser = "id,user_name,password,password_salt"
+const sqlSelectLoginUser = "id,user_name,password,password_salt,email"
 
 func LoginUser(ctx context.Context, req *users.LoginUserRequest) (string, int) {
 	result := ""
@@ -216,9 +242,18 @@ func LoginUser(ctx context.Context, req *users.LoginUserRequest) (string, int) {
 			}
 			userInfo = userDB
 			loginType = "邮箱-密码"
+		case users.LoginPwdKind_ACCOUNT:
+			userDB, err := repository.GetUserByAccount(sqlSelectLoginUser, loginInfo.GetAccount().GetAccountId())
+			if err != nil {
+				kelvins.ErrLogger.Errorf(ctx, "GetUserByAccount err: %v, req: %v", err, json.MarshalToStringNoError(req))
+				return result, code.ErrorServer
+			}
+			userInfo = userDB
+			loginType = "账号-密码"
 		}
 	case users.LoginType_TOKEN:
 		loginType = "认证token"
+		return "", code.UserStateNotVerify
 	}
 	if userInfo.Id <= 0 {
 		return "", code.UserNotExist
@@ -261,27 +296,38 @@ func LoginUser(ctx context.Context, req *users.LoginUserRequest) (string, int) {
 	}
 	result = token
 
-	// 更新在线状态
+	// 更新在线状态并邮件通知
+	pushUserStateNoticeServiceOne.Do(initUserStatePushNotice)
 	updateUserState := func() {
-		retCode := updateUserOnlineState(ctx, userInfo.Id, args.UserOnlineStateOnline)
-		if retCode != code.Success {
-			return
+		businessMsg := args.CommonBusinessMsg{
+			Type: args.UserStateEventTypeLogin,
+			Tag:  args.GetMsg(args.UserStateEventTypeLogin),
+			UUID: genUUID(),
+			Time: util.ParseTimeOfStr(time.Now().Unix()),
+			Content: json.MarshalToStringNoError(args.UserStateNotice{
+				Uid: userInfo.Id,
+				Extra: map[string]string{
+					"login_type": loginType,
+				},
+			}),
 		}
-		// 发送登录邮件
-		emailNotice := fmt.Sprintf(args.UserLoginTemplate, userInfo.UserName, time.Now().String(), loginType)
-		if vars.EmailNoticeSetting != nil && vars.EmailNoticeSetting.Receivers != nil {
-			for _, receiver := range vars.EmailNoticeSetting.Receivers {
-				err = email.SendEmailNotice(ctx, receiver, kelvins.AppName, emailNotice)
-				if err != nil {
-					kelvins.ErrLogger.Info(ctx, "SendEmailNotice err, emailNotice: %v", emailNotice)
-					return
-				}
-			}
-		}
+		pushUserStateNoticeService.PushMessage(ctx, businessMsg)
 	}
 	kelvins.GPool.SendJob(updateUserState)
 
 	return result, retCode
+}
+
+var pushUserStateNoticeService *PushNoticeService
+var pushUserStateNoticeServiceOne sync.Once
+
+func initUserStatePushNotice() {
+	pushUserStateNoticeService = NewPushNoticeService(vars.QueueServerUserStateNotice, PushMsgTag{
+		DeliveryTag:    args.TaskNameUserStateNotice,
+		DeliveryErrTag: args.TaskNameUserStateNoticeErr,
+		RetryCount:     vars.QueueAMQPSettingUserStateNotice.TaskRetryCount,
+		RetryTimeout:   vars.QueueAMQPSettingUserStateNotice.TaskRetryTimeout,
+	})
 }
 
 func PasswordReset(ctx context.Context, req *users.PasswordResetRequest) int {
@@ -337,9 +383,12 @@ func PasswordReset(ctx context.Context, req *users.PasswordResetRequest) int {
 			Type: args.UserStateEventTypePwdModify,
 			Tag:  args.GetMsg(args.UserStateEventTypePwdModify),
 			UUID: genUUID(),
+			Time: util.ParseTimeOfStr(time.Now().Unix()),
 			Content: json.MarshalToStringNoError(args.UserStateNotice{
-				Uid:  user.Id,
-				Time: util.ParseTimeOfStr(time.Now().Unix()),
+				Uid: user.Id,
+				Extra: map[string]string{
+					"reset_type": "通过验证码",
+				},
 			}),
 		}
 		_, retCode := pushNoticeService.PushMessage(ctx, businessMsg)
@@ -396,6 +445,15 @@ func CheckUserExist(ctx context.Context, countryCode, phone string) (bool, int) 
 	exist, err := repository.CheckUserExistByPhone(countryCode, phone)
 	if err != nil {
 		kelvins.ErrLogger.Errorf(ctx, "CheckUserExistByPhone err: %v, countryCode: %v, phone:%v", err, countryCode, phone)
+		return exist, code.ErrorServer
+	}
+	return exist, code.Success
+}
+
+func CheckUserExistByAccountId(ctx context.Context, accountId string) (bool, int) {
+	exist, err := repository.CheckUserExistByAccountId(accountId)
+	if err != nil {
+		kelvins.ErrLogger.Errorf(ctx, "CheckUserExistByAccountId err: %v, accountId: %v", err, accountId)
 		return exist, code.ErrorServer
 	}
 	return exist, code.Success
@@ -745,25 +803,27 @@ func UserAccountCharge(ctx context.Context, req *users.UserAccountChargeRequest)
 	}
 
 	kelvins.GPool.SendJob(func() {
-		var un strings.Builder
-		for _, v := range userInfoList {
-			un.WriteString(v.UserName)
-		}
 		var coin string
 		if req.CoinType == 0 {
-			coin = "RMB"
+			coin = "CNY"
 		} else {
 			coin = "USD"
 		}
-		emailNotice := fmt.Sprintf(args.UserAccountChargeTemplate, un.String(), time.Now(), req.Amount, coin)
-		if vars.EmailNoticeSetting != nil && vars.EmailNoticeSetting.Receivers != nil {
-			for _, receiver := range vars.EmailNoticeSetting.Receivers {
-				err = email.SendEmailNotice(ctx, receiver, kelvins.AppName, emailNotice)
-				if err != nil {
-					kelvins.ErrLogger.Info(ctx, "SendEmailNotice err, emailNotice: %v", emailNotice)
-					return
-				}
+		for _, v := range req.GetUidList() {
+			businessMsg := args.CommonBusinessMsg{
+				Type: args.UserStateEventTypeAccountCharge,
+				Tag:  args.GetMsg(args.UserStateEventTypeAccountCharge),
+				UUID: genUUID(),
+				Time: util.ParseTimeOfStr(time.Now().Unix()),
+				Content: json.MarshalToStringNoError(args.UserStateNotice{
+					Uid: int(v),
+					Extra: map[string]string{
+						"amount": req.Amount,
+						"coin":   coin,
+					},
+				}),
 			}
+			pushUserStateNoticeService.PushMessage(ctx, businessMsg)
 		}
 	})
 
@@ -804,6 +864,23 @@ func updateUserOnlineState(ctx context.Context, uid int, content string) (retCod
 		retCode = code.ErrorServer
 		return
 	}
+
+	kelvins.GPool.SendJob(func() {
+		businessMsg := args.CommonBusinessMsg{
+			Type: args.UserStateEventTypeLogin,
+			Tag:  args.GetMsg(args.UserStateEventTypeLogin),
+			UUID: genUUID(),
+			Time: util.ParseTimeOfStr(time.Now().Unix()),
+			Content: json.MarshalToStringNoError(args.UserStateNotice{
+				Uid: int(uid),
+				Extra: map[string]string{
+					"state": content,
+				},
+			}),
+		}
+		pushUserStateNoticeService.PushMessage(ctx, businessMsg)
+	})
+
 	return
 }
 

@@ -115,7 +115,7 @@ func (u *UsersServer) GenVerifyCode(ctx context.Context, req *users.GenVerifyCod
 			Code: users.RetCode_SUCCESS,
 		},
 	}
-	verifyCode, retCode := service.GenVerifyCode(ctx, req)
+	retCode := service.GenVerifyCode(ctx, req)
 	if retCode != code.Success {
 		switch retCode {
 		case code.ErrorVerifyCodeLimited:
@@ -126,8 +126,6 @@ func (u *UsersServer) GenVerifyCode(ctx context.Context, req *users.GenVerifyCod
 			result.Common.Code = users.RetCode_ERROR
 		}
 	}
-	result.VerifyCode = verifyCode.VerifyCode
-	result.Expire = verifyCode.Expire
 	return result, nil
 }
 

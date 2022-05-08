@@ -17,7 +17,7 @@ func UpdateMerchantsMaterial(query, maps map[string]interface{}) (err error) {
 
 func GetMerchantIdByUid(uid int) (*mysql.Merchant, error) {
 	var model mysql.Merchant
-	_, err := kelvins.XORM_DBEngine.Table(mysql.TableMerchantInfo).Select("merchant_id").Where("uid = ?", uid).Get(&model)
+	_, err := kelvins.XORM_DBEngine.Table(mysql.TableMerchantInfo).Select("merchant_id,merchant_code").Where("uid = ?", uid).Get(&model)
 	return &model, err
 }
 

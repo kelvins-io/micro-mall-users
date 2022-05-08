@@ -3,11 +3,13 @@ package service
 import (
 	"context"
 	"fmt"
+	"strings"
+	"time"
+
 	"gitee.com/cristiane/micro-mall-users/model/args"
 	"gitee.com/cristiane/micro-mall-users/model/mysql"
 	"gitee.com/cristiane/micro-mall-users/pkg/code"
 	"gitee.com/cristiane/micro-mall-users/pkg/util"
-	"gitee.com/cristiane/micro-mall-users/pkg/util/email"
 	"gitee.com/cristiane/micro-mall-users/proto/micro_mall_search_proto/search_business"
 	"gitee.com/cristiane/micro-mall-users/proto/micro_mall_users_proto/users"
 	"gitee.com/cristiane/micro-mall-users/repository"
@@ -16,8 +18,6 @@ import (
 	"gitee.com/kelvins-io/common/json"
 	"gitee.com/kelvins-io/kelvins"
 	"github.com/google/uuid"
-	"strings"
-	"time"
 )
 
 func MerchantsMaterial(ctx context.Context, req *users.MerchantsMaterialRequest) (merchantId int, retCode int) {
@@ -63,32 +63,14 @@ func MerchantsMaterial(ctx context.Context, req *users.MerchantsMaterialRequest)
 			return
 		}
 		merchantId = record.MerchantId
-
-		// 商户申请通知
-		kelvins.GPool.SendJob(func() {
-			u, ret := GetUserInfo(ctx, int(req.Info.Uid))
-			if ret == code.Success {
-				emailNotice := fmt.Sprintf(args.UserApplyMerchantTemplate, u.UserName, time.Now(), req.Info.RegisterAddr)
-				if vars.EmailNoticeSetting != nil && vars.EmailNoticeSetting.Receivers != nil {
-					for _, receiver := range vars.EmailNoticeSetting.Receivers {
-						err = email.SendEmailNotice(ctx, receiver, kelvins.AppName, emailNotice)
-						if err != nil {
-							kelvins.ErrLogger.Info(ctx, "SendEmailNotice err, emailNotice: %v", emailNotice)
-							return
-						}
-					}
-				}
-			}
-		})
-
-		// 搜索通知
-		merchantsMaterialSearchNotice(&args.MerchantInfoSearch{
+		// 事件通知
+		merchantsMaterialEventNotice(&args.MerchantInfoSearch{
 			Uid:          req.GetInfo().GetUid(),
 			MerchantCode: merchantCode,
 			RegisterAddr: req.GetInfo().GetRegisterAddr(),
 			HealthCardNo: req.GetInfo().GetHealthCardNo(),
 			TaxCardNo:    req.GetInfo().GetTaxCardNo(),
-		})
+		}, "create")
 
 		return
 	} else if req.OperationType == users.OperationType_UPDATE {
@@ -103,52 +85,59 @@ func MerchantsMaterial(ctx context.Context, req *users.MerchantsMaterialRequest)
 			"tax_card_no":    req.Info.TaxCardNo,
 			"update_time":    time.Now(),
 		}
-		err := repository.UpdateMerchantsMaterial(query, maps)
+		err = repository.UpdateMerchantsMaterial(query, maps)
 		if err != nil {
 			retCode = code.ErrorServer
 			kelvins.ErrLogger.Errorf(ctx, "UpdateMerchantsMaterial err: %v,query : %+v, maps: %+v", err, query, maps)
 			return
 		}
-
-		kelvins.GPool.SendJob(func() {
-			u, ret := GetUserInfo(ctx, int(req.Info.Uid))
-			if ret == code.Success {
-				emailNotice := fmt.Sprintf(args.UserModifyMerchantInfoTemplate, u.UserName, time.Now())
-				if vars.EmailNoticeSetting != nil && vars.EmailNoticeSetting.Receivers != nil {
-					for _, receiver := range vars.EmailNoticeSetting.Receivers {
-						err = email.SendEmailNotice(ctx, receiver, kelvins.AppName, emailNotice)
-						if err != nil {
-							kelvins.ErrLogger.Info(ctx, "SendEmailNotice err, emailNotice: %v", emailNotice)
-							return
-						}
-					}
-				}
-			}
-		})
-
-		// 搜索通知
-		merchantsMaterialSearchNotice(&args.MerchantInfoSearch{
+		// 事件通知
+		merchantsMaterialEventNotice(&args.MerchantInfoSearch{
 			Uid:          req.GetInfo().GetUid(),
 			RegisterAddr: req.GetInfo().GetRegisterAddr(),
 			HealthCardNo: req.GetInfo().GetHealthCardNo(),
 			TaxCardNo:    req.GetInfo().GetTaxCardNo(),
-		})
+		}, "update")
 
 		return
 	}
 	return
 }
 
-func GetMerchantsMaterial(ctx context.Context, req *users.GetMerchantsMaterialRequest) (*mysql.Merchant, int) {
+func GetMerchantsMaterial(ctx context.Context, req *users.GetMerchantsMaterialRequest) (*users.MerchantsMaterialInfo, int) {
+	result := &users.MerchantsMaterialInfo{}
 	merchantInfo, err := repository.GetMerchantsMaterial(int(req.MaterialId))
 	if err != nil {
 		kelvins.ErrLogger.Errorf(ctx, "GetMerchantsMaterialByUid err: %v,MaterialId : %v", err, req.GetMaterialId())
-		return merchantInfo, code.ErrorServer
+		return result, code.ErrorServer
 	}
-	return merchantInfo, code.Success
+
+	result = &users.MerchantsMaterialInfo{
+		Uid:          int64(merchantInfo.Uid),
+		MaterialId:   int64(merchantInfo.MerchantId),
+		RegisterAddr: merchantInfo.RegisterAddr,
+		HealthCardNo: merchantInfo.HealthCardNo,
+		Identity:     int32(merchantInfo.Identity),
+		State:        int32(merchantInfo.State),
+		TaxCardNo:    merchantInfo.TaxCardNo,
+		CreateTime:   util.ParseTimeOfStr(merchantInfo.CreateTime.Unix()),
+		UpdateTime:   util.ParseTimeOfStr(merchantInfo.UpdateTime.Unix()),
+	}
+
+	if merchantInfo.Uid > 0 {
+		userByUid, err := repository.GetUserByUid("id,user_name,email", merchantInfo.Uid)
+		if err != nil {
+			kelvins.ErrLogger.Errorf(ctx, "GetUserByUid err: %v,uid : %v", err, merchantInfo.Uid)
+			return result, code.ErrorServer
+		}
+		result.MerchantName = userByUid.UserName
+		result.MerchantEmail = userByUid.Email
+	}
+
+	return result, code.Success
 }
 
-func merchantsMaterialSearchNotice(info *args.MerchantInfoSearch) {
+func merchantsMaterialEventNotice(info *args.MerchantInfoSearch, operationType string) {
 	kelvins.GPool.SendJob(func() {
 		var ctx = context.TODO()
 		var userName string
@@ -159,13 +148,39 @@ func merchantsMaterialSearchNotice(info *args.MerchantInfoSearch) {
 			}
 		}
 		info.UserName = userName
+		if info.MerchantCode == "" {
+			merchantIdByUid, err := repository.GetMerchantIdByUid(int(info.Uid))
+			if err != nil {
+				kelvins.ErrLogger.Errorf(ctx, "GetMerchantIdByUid err: %v,uid : %v", err, info.Uid)
+				return
+			}
+			info.MerchantCode = merchantIdByUid.MerchantCode
+		}
+
+		// 1 搜索事件
 		userInfoMsg := args.CommonBusinessMsg{
-			Type:    args.MerchantsMaterialInfoNoticeType,
-			Tag:     args.GetMsg(args.MerchantsMaterialInfoNoticeType),
+			Type:    args.MerchantInfoSearchNoticeType,
+			Tag:     args.GetMsg(args.MerchantInfoSearchNoticeType),
 			UUID:    uuid.New().String(),
 			Content: json.MarshalToStringNoError(info),
 		}
 		vars.QueueServerUserInfoSearchPusher.PushMessage(ctx, &userInfoMsg)
+
+		// 2 用户状态事件
+		businessMsg := args.CommonBusinessMsg{
+			Type: args.UserStateEventTypeMerchantInfo,
+			Tag:  args.GetMsg(args.UserStateEventTypeMerchantInfo),
+			UUID: genUUID(),
+			Time: util.ParseTimeOfStr(time.Now().Unix()),
+			Content: json.MarshalToStringNoError(args.UserStateNotice{
+				Uid: int(info.Uid),
+				Extra: map[string]string{
+					"operation_type": operationType,
+					"merchant_code":  info.MerchantCode,
+				},
+			}),
+		}
+		pushUserStateNoticeService.PushMessage(ctx, businessMsg)
 	})
 }
 

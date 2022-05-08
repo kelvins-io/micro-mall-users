@@ -26,14 +26,14 @@ const (
 )
 
 const (
-	Unknown                        = 0
-	VerifyCodeRegister             = 1
-	VerifyCodeLogin                = 2
-	VerifyCodePassword             = 3
-	UserLoginTemplate              = "尊敬的用户【%s】你好，你于：%v 在微商城使用【%s】登录"
-	UserAccountChargeTemplate      = "尊敬的用户【%s】你好，你与：%v 在微商城 充值【%s-%s】成功"
-	UserApplyMerchantTemplate      = "尊敬的用户【%s】你好。你与：%v 在微商城申请【%v】商户成功"
-	UserModifyMerchantInfoTemplate = "尊敬的用户【%s】你好。你与：%v 在微商城变更商户资料成功"
+	Unknown            = 0
+	VerifyCodeRegister = 1
+	VerifyCodeLogin    = 2
+	VerifyCodePassword = 3
+)
+
+const (
+	DefaultCountryCode = "86"
 )
 
 var MsgFlags = map[int]string{
@@ -45,8 +45,10 @@ var MsgFlags = map[int]string{
 	UserStateEventTypePwdModify:     "修改密码",
 	UserStateEventTypeLogin:         "登录上线",
 	UserStateEventTypeLogout:        "退出登录",
-	UserInfoSearchNoticeType:        "用户注册/更新信息",
-	MerchantsMaterialInfoNoticeType: "商户申请通知",
+	UserInfoSearchNoticeType:        "用户注册、更新信息",
+	MerchantInfoSearchNoticeType:    "商户认证注册、更新信息",
+	UserStateEventTypeAccountCharge: "账号充值",
+	UserStateEventTypeMerchantInfo:  "商户认证申请、更新信息",
 }
 
 func GetMsg(code int) string {
@@ -66,12 +68,17 @@ const (
 	UserStateEventTypeLogin         = 10011
 	UserStateEventTypeLogout        = 10012
 	UserStateEventTypePwdModify     = 10013
-	UserInfoSearchNoticeType        = 10014
-	MerchantsMaterialInfoNoticeType = 10015
+	UserStateEventTypeAccountCharge = 10014
+	UserStateEventTypeMerchantInfo  = 10015
 )
 
 const (
-	VerifyCodeTemplate = "【%v】验证码 %v，用于%v，%v分钟内有效，验证码提供给其他人可能导致账号被盗，请勿泄漏，谨防被骗。"
+	UserInfoSearchNoticeType     = 50001
+	MerchantInfoSearchNoticeType = 50002
+)
+
+const (
+	VerifyCodeTemplate = "尊敬的用户【%v】你好，验证码 %v，用于%v，%v分钟内有效，验证码提供给其他人可能导致账号被盗，请勿泄漏，谨防被骗。"
 )
 
 type UserVerifyCode struct {
@@ -100,19 +107,19 @@ type CommonBusinessMsg struct {
 	Type    int    `json:"type"`
 	Tag     string `json:"tag"`
 	UUID    string `json:"uuid"`
+	Time    string `json:"time"`
 	Content string `json:"content"`
 }
 
 type UserRegisterNotice struct {
 	CountryCode string `json:"country_code"`
 	Phone       string `json:"phone"`
-	Time        string `json:"time"`
 	State       int    `json:"state"`
 }
 
 type UserStateNotice struct {
-	Uid  int    `json:"uid"`
-	Time string `json:"time"`
+	Uid   int               `json:"uid"`
+	Extra map[string]string `json:"extra"`
 }
 
 type UserOnlineState struct {

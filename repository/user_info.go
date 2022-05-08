@@ -42,6 +42,13 @@ func GetUserByEmail(sqlSelect, email string) (*mysql.User, error) {
 	return &user, err
 }
 
+func GetUserByAccount(sqlSelect, accountId string) (*mysql.User, error) {
+	var user mysql.User
+	var err error
+	_, err = kelvins.XORM_DBEngine.Table(mysql.TableUser).Select(sqlSelect).Where("account_id = ? ", accountId).Get(&user)
+	return &user, err
+}
+
 func GetUserByPhone(sqlSelect, countryCode, phone string) (*mysql.User, error) {
 	var user mysql.User
 	var err error
@@ -76,6 +83,21 @@ func CheckUserExistByPhone(countryCode, phone string) (exist bool, err error) {
 	exist, err = kelvins.XORM_DBEngine.Table(mysql.TableUser).
 		Select("id").
 		Where("country_code = ? and phone = ?", countryCode, phone).Get(&user)
+	if err != nil {
+		return false, err
+	}
+	if user.Id > 0 {
+		return true, nil
+	}
+
+	return false, nil
+}
+
+func CheckUserExistByAccountId(accountId string) (exist bool, err error) {
+	var user mysql.User
+	exist, err = kelvins.XORM_DBEngine.Table(mysql.TableUser).
+		Select("id").
+		Where("account_id = ?", accountId).Get(&user)
 	if err != nil {
 		return false, err
 	}

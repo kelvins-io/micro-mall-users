@@ -2,8 +2,8 @@ package server
 
 import (
 	"context"
+
 	"gitee.com/cristiane/micro-mall-users/pkg/code"
-	"gitee.com/cristiane/micro-mall-users/pkg/util"
 	"gitee.com/cristiane/micro-mall-users/proto/micro_mall_users_proto/users"
 	"gitee.com/cristiane/micro-mall-users/service"
 	"gitee.com/kelvins-io/common/errcode"
@@ -76,17 +76,7 @@ func (m *MerchantsServer) GetMerchantsMaterial(ctx context.Context, req *users.G
 			result.Common.Msg = errcode.GetErrMsg(code.ErrorServer)
 		}
 	}
-	result.Info = &users.MerchantsMaterialInfo{
-		Uid:          int64(merchantInfo.Uid),
-		MaterialId:   int64(merchantInfo.MerchantId),
-		RegisterAddr: merchantInfo.RegisterAddr,
-		HealthCardNo: merchantInfo.HealthCardNo,
-		Identity:     int32(merchantInfo.Identity),
-		State:        int32(merchantInfo.State),
-		TaxCardNo:    merchantInfo.TaxCardNo,
-		CreateTime:   util.ParseTimeOfStr(merchantInfo.CreateTime.Unix()),
-		UpdateTime:   util.ParseTimeOfStr(merchantInfo.UpdateTime.Unix()),
-	}
+	result.Info = merchantInfo
 	return &result, nil
 }
 

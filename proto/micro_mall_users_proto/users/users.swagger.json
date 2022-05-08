@@ -838,6 +838,14 @@
         }
       }
     },
+    "usersAccount": {
+      "type": "object",
+      "properties": {
+        "account_id": {
+          "type": "string"
+        }
+      }
+    },
     "usersAccountType": {
       "type": "string",
       "enum": [
@@ -942,13 +950,6 @@
       "properties": {
         "common": {
           "$ref": "#/definitions/usersCommonResponse"
-        },
-        "verify_code": {
-          "type": "string"
-        },
-        "expire": {
-          "type": "string",
-          "format": "int64"
         }
       }
     },
@@ -1058,6 +1059,9 @@
         "phone": {
           "$ref": "#/definitions/usersMobilePhone"
         },
+        "account": {
+          "$ref": "#/definitions/usersAccount"
+        },
         "pwd": {
           "type": "string"
         }
@@ -1067,7 +1071,8 @@
       "type": "string",
       "enum": [
         "MOBILE_PHONE",
-        "EMAIL"
+        "EMAIL",
+        "ACCOUNT"
       ],
       "default": "MOBILE_PHONE"
     },
@@ -1221,6 +1226,12 @@
           "type": "string"
         },
         "update_time": {
+          "type": "string"
+        },
+        "merchant_name": {
+          "type": "string"
+        },
+        "merchant_email": {
           "type": "string"
         }
       }
@@ -1386,6 +1397,9 @@
           "type": "string"
         },
         "verify_code": {
+          "type": "string"
+        },
+        "account_id": {
           "type": "string"
         }
       }
