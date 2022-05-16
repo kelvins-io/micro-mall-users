@@ -205,75 +205,77 @@ func userInfoSearchNotice(info *args.UserInfoSearch) {
 	})
 }
 
-const sqlSelectLoginUser = "id,user_name,password,password_salt,email"
+const sqlSelectLoginUser = "*"
 
-func LoginUser(ctx context.Context, req *users.LoginUserRequest) (string, int) {
-	result := ""
+func LoginUser(ctx context.Context, req *users.LoginUserRequest) (token string, userInfoDB *mysql.User, retCode int) {
 	loginType := ""
-	retCode := code.Success
-	userInfo := &mysql.User{}
+	retCode = code.Success
+	userInfoDB = &mysql.User{}
+	var err error
 	switch req.GetLoginType() {
 	case users.LoginType_VERIFY_CODE:
 		loginInfo := req.GetVerifyCode()
-		userDB, err := repository.GetUserByPhone(sqlSelectLoginUser, loginInfo.GetPhone().GetCountryCode(), loginInfo.GetPhone().GetPhone())
+		userInfoDB, err = repository.GetUserByPhone(sqlSelectLoginUser, loginInfo.GetPhone().GetCountryCode(), loginInfo.GetPhone().GetPhone())
 		if err != nil {
 			kelvins.ErrLogger.Errorf(ctx, "GetUserByPhone err: %v, req: %v", err, json.MarshalToStringNoError(req))
-			return result, code.ErrorServer
+			retCode = code.ErrorServer
+			return
 		}
 		loginType = "验证码"
-		userInfo = userDB
 	case users.LoginType_PWD:
 		loginInfo := req.GetPwd()
 		switch loginInfo.GetLoginKind() {
 		case users.LoginPwdKind_MOBILE_PHONE:
 			mobile := loginInfo.GetPhone()
-			userDB, err := repository.GetUserByPhone(sqlSelectLoginUser, mobile.GetCountryCode(), mobile.GetPhone())
+			userInfoDB, err = repository.GetUserByPhone(sqlSelectLoginUser, mobile.GetCountryCode(), mobile.GetPhone())
 			if err != nil {
 				kelvins.ErrLogger.Errorf(ctx, "GetUserByPhone err: %v, req: %v", err, json.MarshalToStringNoError(req))
-				return result, code.ErrorServer
+				retCode = code.ErrorServer
+				return
 			}
-			userInfo = userDB
 			loginType = "手机号-密码"
 		case users.LoginPwdKind_EMAIL:
-			userDB, err := repository.GetUserByEmail(sqlSelectLoginUser, loginInfo.GetEmail().GetContent())
+			userInfoDB, err = repository.GetUserByEmail(sqlSelectLoginUser, loginInfo.GetEmail().GetContent())
 			if err != nil {
 				kelvins.ErrLogger.Errorf(ctx, "GetUserByPhone err: %v, req: %v", err, json.MarshalToStringNoError(req))
-				return result, code.ErrorServer
+				retCode = code.ErrorServer
+				return
 			}
-			userInfo = userDB
 			loginType = "邮箱-密码"
 		case users.LoginPwdKind_ACCOUNT:
-			userDB, err := repository.GetUserByAccount(sqlSelectLoginUser, loginInfo.GetAccount().GetAccountId())
+			userInfoDB, err = repository.GetUserByAccount(sqlSelectLoginUser, loginInfo.GetAccount().GetAccountId())
 			if err != nil {
 				kelvins.ErrLogger.Errorf(ctx, "GetUserByAccount err: %v, req: %v", err, json.MarshalToStringNoError(req))
-				return result, code.ErrorServer
+				retCode = code.ErrorServer
+				return
 			}
-			userInfo = userDB
 			loginType = "账号-密码"
 		}
 	case users.LoginType_TOKEN:
 		loginType = "认证token"
-		return "", code.UserStateNotVerify
+		return
 	}
-	if userInfo.Id <= 0 {
-		return "", code.UserNotExist
+	if userInfoDB.Id <= 0 {
+		retCode = code.UserNotExist
+		return
 	}
 	// 检查用户状态
-	retCode = CheckUserState(ctx, []int64{int64(userInfo.Id)})
+	retCode = CheckUserState(ctx, []int64{int64(userInfoDB.Id)})
 	if retCode != code.Success {
-		return "", retCode
+		return
 	}
 
 	// 根据登录类型处理
 	switch req.GetLoginType() {
 	case users.LoginType_PWD:
-		pwd := password.GeneratePassword(req.GetPwd().GetPwd(), userInfo.PasswordSalt)
-		if pwd != userInfo.Password {
-			_, retCode := userLoginFailure(ctx, userInfo.Id)
+		pwd := password.GeneratePassword(req.GetPwd().GetPwd(), userInfoDB.PasswordSalt)
+		if pwd != userInfoDB.Password {
+			_, retCode = userLoginFailure(ctx, userInfoDB.Id)
 			if retCode != code.Success {
-				return result, retCode
+				return
 			}
-			return result, code.UserPwdNotMatch
+			retCode = code.UserPwdNotMatch
+			return
 		}
 	case users.LoginType_VERIFY_CODE:
 		// 检查验证码
@@ -284,17 +286,17 @@ func LoginUser(ctx context.Context, req *users.LoginUserRequest) (string, int) {
 			verifyCode:   req.GetVerifyCode().VerifyCode,
 		}
 		if retCode = checkVerifyCode(ctx, &reqCheckVerifyCode); retCode != code.Success {
-			return result, retCode
+			return
 		}
 	default:
 	}
 	// 生成token
-	token, err := util.GenerateToken(userInfo.UserName, userInfo.Id)
+	token, err = util.GenerateToken(userInfoDB.UserName, userInfoDB.Id)
 	if err != nil {
-		kelvins.ErrLogger.Errorf(ctx, "GenerateToken err: %v, req: %v", err, json.MarshalToStringNoError(userInfo))
-		return token, code.ErrorServer
+		kelvins.ErrLogger.Errorf(ctx, "GenerateToken err: %v, req: %v", err, json.MarshalToStringNoError(userInfoDB))
+		retCode = code.ErrorServer
+		return
 	}
-	result = token
 
 	// 更新在线状态并邮件通知
 	pushUserStateNoticeServiceOne.Do(initUserStatePushNotice)
@@ -305,7 +307,7 @@ func LoginUser(ctx context.Context, req *users.LoginUserRequest) (string, int) {
 			UUID: genUUID(),
 			Time: util.ParseTimeOfStr(time.Now().Unix()),
 			Content: json.MarshalToStringNoError(args.UserStateNotice{
-				Uid: userInfo.Id,
+				Uid: userInfoDB.Id,
 				Extra: map[string]string{
 					"login_type": loginType,
 				},
@@ -315,7 +317,7 @@ func LoginUser(ctx context.Context, req *users.LoginUserRequest) (string, int) {
 	}
 	kelvins.GPool.SendJob(updateUserState)
 
-	return result, retCode
+	return
 }
 
 var pushUserStateNoticeService *PushNoticeService

@@ -166,7 +166,7 @@ func (u *UsersServer) LoginUser(ctx context.Context, req *users.LoginUserRequest
 			Code: users.RetCode_SUCCESS,
 		},
 	}
-	token, retCode := service.LoginUser(ctx, req)
+	token, userInfoDB, retCode := service.LoginUser(ctx, req)
 	if retCode != code.Success {
 		switch retCode {
 		case code.ErrorVerifyCodeForbidden:
@@ -189,7 +189,25 @@ func (u *UsersServer) LoginUser(ctx context.Context, req *users.LoginUserRequest
 		result.Common.Msg = code.GetMsg(retCode)
 		return result, nil
 	}
-	result.IdentityToken = token
+
+	result.UserInfo = &users.UserInfo{
+		Uid:         int64(userInfoDB.Id),
+		AccountId:   userInfoDB.AccountId,
+		UserName:    userInfoDB.UserName,
+		Sex:         int32(userInfoDB.Sex),
+		CountryCode: userInfoDB.CountryCode,
+		Phone:       userInfoDB.Phone,
+		Email:       userInfoDB.Email,
+		State:       int32(userInfoDB.State),
+		IdCardNo:    userInfoDB.IdCardNo.String,
+		Inviter:     int64(userInfoDB.Inviter),
+		InviterCode: userInfoDB.InviteCode,
+		ContactAddr: userInfoDB.ContactAddr,
+		Age:         int32(userInfoDB.Age),
+		CreateTime:  util.ParseTimeOfStr(userInfoDB.CreateTime.Unix()),
+		UpdateTime:  util.ParseTimeOfStr(userInfoDB.UpdateTime.Unix()),
+	}
+	result.Token = token
 	return result, nil
 }
 
