@@ -442,6 +442,37 @@
         ]
       }
     },
+    "/v1/user/load_balance_test": {
+      "get": {
+        "summary": "负载均衡测试",
+        "operationId": "UsersService_LoadBalanceTest",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/usersLoadBalanceTestResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "query",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "UsersService"
+        ]
+      }
+    },
     "/v1/user/login": {
       "put": {
         "summary": "登录",
@@ -1044,6 +1075,17 @@
           "items": {
             "$ref": "#/definitions/usersMobilePhone"
           }
+        }
+      }
+    },
+    "usersLoadBalanceTestResponse": {
+      "type": "object",
+      "properties": {
+        "common": {
+          "$ref": "#/definitions/usersCommonResponse"
+        },
+        "status": {
+          "type": "string"
         }
       }
     },

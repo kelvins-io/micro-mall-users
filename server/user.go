@@ -463,3 +463,16 @@ func (u *UsersServer) SearchUserInfo(ctx context.Context, req *users.SearchUserI
 	result.List = userInfoList
 	return result, nil
 }
+
+func (u *UsersServer) LoadBalanceTest(ctx context.Context, req *users.LoadBalanceTestRequest) (*users.LoadBalanceTestResponse, error) {
+	result := &users.LoadBalanceTestResponse{Common: &users.CommonResponse{
+		Code: users.RetCode_SUCCESS,
+	}}
+	status, retCode := service.LoadBalanceTest(ctx, req.GetQuery())
+	if retCode != code.Success {
+		result.Common.Code = users.RetCode_ERROR
+		return result, nil
+	}
+	result.Status = status
+	return result, nil
+}

@@ -4,10 +4,13 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
+
+	"gitee.com/kelvins-io/common/random"
 
 	"gitee.com/cristiane/micro-mall-users/model/args"
 	"gitee.com/cristiane/micro-mall-users/model/mysql"
@@ -1145,5 +1148,15 @@ func SearchUserInfo(ctx context.Context, query string) (result []*users.SearchUs
 		return
 	}
 
+	return
+}
+
+var loadBalanceStatus = random.KrandNum(5)
+
+func LoadBalanceTest(ctx context.Context, query string) (status string, retCode int) {
+	retCode = code.Success
+	pid := os.Getpid()
+	pod := kelvins.GRPCAppInstance.Port
+	status = fmt.Sprintf("Node Pid: %d，Pod：%d，Status: %s，QueryString：%v", pid, pod, loadBalanceStatus, query)
 	return
 }
